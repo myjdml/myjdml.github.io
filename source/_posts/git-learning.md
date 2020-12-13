@@ -115,6 +115,17 @@ package.json中的配置
 
 效果如下:  
 ![img](https://user-gold-cdn.xitu.io/2018/5/16/16369a14ec8704fc?imageslim)
+
+## 杂记
+
++ 当我们发现每次push的时候都要输入git的帐号和密码时，但我们又不想用ssh连接。这个时候我们就可以尝试去使用这么一行命令
+```shell
+git config --global credential.helper store
+```
+> 这行命令产生的作用只有一个，就是在本地全局建立一个文本，在你每次输入帐号和密码的时候记录当前的帐号和密码。这样的话，只需要输入一次帐号和密码，之后push的时候就都不需要输入了！
+
+
+
 ## Ref
 
 [廖雪峰的官方网站](https://www.liaoxuefeng.com/wiki/896043488029600/898732864121440)  
