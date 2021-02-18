@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fetch笔记 - Code_Master&#39;s blog</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="关于AJAX的一些回顾
+基本步骤：  
+进行Ajax请求相信大家一定不陌生，这里我们一起回顾一下，ajax请求是什么样的！
+1234567891011121314151617181920212223,"> 
+    <meta name="author" content="Yaojun Mao"> 
+    <link rel="alternative" href="atom.xml" title="Code_Master&#39;s blog" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Code_Master&#39;s blog</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://yoursite.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">Fetch笔记</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">Fetch笔记</h1>
+        <div class="stuff">
+            <span>九月 02, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Ajax/" rel="tag">Ajax</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Fetch/" rel="tag">Fetch</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/js/" rel="tag">js</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <h2 id="关于AJAX的一些回顾"><a href="#关于AJAX的一些回顾" class="headerlink" title="关于AJAX的一些回顾"></a>关于AJAX的一些回顾</h2><p><img src="/images/Fetch/ajax.jpg" alt="ajax"></p>
+<p>基本步骤：  </p>
+<p>进行Ajax请求相信大家一定不陌生，这里我们一起回顾一下，ajax请求是什么样的！</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> btn = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#btn&quot;</span>);</span><br><span class="line">btn.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> username = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#username&quot;</span>).value;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="comment">// //1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">     <span class="comment">// let xhr = new XMLHttpRequest();</span></span><br><span class="line">     <span class="comment">// //指定发送</span></span><br><span class="line">     <span class="comment">// xhr.open(&quot;get&quot;, &quot;../php/checkUsername.php?username=&quot; + username, true);</span></span><br><span class="line">     <span class="comment">// //发送</span></span><br><span class="line">     <span class="comment">// xhr.send(null);</span></span><br><span class="line">     <span class="comment">// //发送成功需要执行的代码</span></span><br><span class="line">     <span class="comment">// xhr.onreadystatechange = function () &#123;</span></span><br><span class="line">     <span class="comment">//     let result = xhr.responseText;</span></span><br><span class="line">     <span class="comment">//     document.querySelector(&quot;#result&quot;).innerHTML = result;</span></span><br><span class="line">     <span class="comment">// &#125;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">    <span class="keyword">let</span> xhr = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">window</span>.XMLHttpRequest) &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//兼容IE6</span></span><br><span class="line">        xhr = <span class="keyword">new</span> ActiveXObject(<span class="string">&quot;Microsoft.XMLHTTP&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//对于get</span></span><br><span class="line">        <span class="comment">//2.准备发送</span></span><br><span class="line">        xhr.open(<span class="string">&quot;get&quot;</span>, <span class="string">&quot;../php/checkUsername.php?username=&quot;</span> + username, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">//3.执行发送</span></span><br><span class="line">        xhr.send(<span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//对于post</span></span><br><span class="line">        <span class="comment">//2.准备发送</span></span><br><span class="line">        xhr.open(<span class="string">&quot;post&quot;</span>, <span class="string">&quot;../php/checkUsername.php&quot;</span>, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">//3.执行发送</span></span><br><span class="line">        <span class="keyword">let</span> param = <span class="string">&quot;username=&quot;</span> + username;</span><br><span class="line">        <span class="comment">//对于post请求来说，参数应该放在请求体当中。</span></span><br><span class="line">        <span class="comment">//设置xhr请求信息，只有post请求有</span></span><br><span class="line">        xhr.setRequestHeader(<span class="string">&quot;Content-type&quot;</span>, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>);</span><br><span class="line">        xhr.send(param);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//4.设置回调函数</span></span><br><span class="line">    xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status === <span class="number">200</span>) &#123;</span><br><span class="line">                <span class="keyword">let</span> result = xhr.responseText;</span><br><span class="line">                <span class="built_in">document</span>.querySelector(<span class="string">&quot;#result&quot;</span>).innerHTML = result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Fetch-Fetch-Fetch！！！"><a href="#Fetch-Fetch-Fetch！！！" class="headerlink" title="Fetch Fetch Fetch！！！"></a>Fetch Fetch Fetch！！！</h2><p>当我们使用javascript去发送和接收一些信息的时候，我们会发起一个叫做ajax请求的东西。ajax是一种技术，当我们需要发送和接收信息时，信息返回回来，我们需要改变HTML，将它添加到页面中。这个时候浏览器往往需要重新渲染。而我们如果使用了ajax技术的话，浏览器不需要去重新刷新页面，而是只改变需要更新的部分，让页面局部刷新。  </p>
+<p>由于原生的js代码实现ajax十分的繁琐，并且有各种适配的问题，所以Jquery封装库实现ajax横空出世，在当时成为了一股潮流。它只需要引入Jquery文件，进行一些简单的配置，就可以实现ajax异步请求。  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$.ajax(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  success: <span class="function">(<span class="params">data</span>) =&gt;</span> &#123; <span class="comment">/* do something with the data */</span> &#125;,</span><br><span class="line">  error: <span class="function">(<span class="params">err</span>) =&gt;</span> &#123; <span class="comment">/* do something when an error happens */</span>&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Fetch的支持"><a href="#Fetch的支持" class="headerlink" title="Fetch的支持"></a>Fetch的支持</h3><p><img src="/images/Fetch/brower.png" alt="image"></p>
+<p>Fetch的支持性非常好，支持几乎所有的主流浏览器（老版的IE和迷你版的欧朋除外）。而且因为Fetch是原生的方法，所以它在项目中使用十分的安全。如果你需要使用一些方法，原生不支持。这里有一些<a target="_blank" rel="noopener" href="https://github.com/github/fetch">补充</a>  </p>
+<h3 id="使用Fetch获取数据"><a href="#使用Fetch获取数据" class="headerlink" title="使用Fetch获取数据"></a>使用Fetch获取数据</h3><p>使用Fetch获取数据很容易，只需要知道资源地址就可以  </p>
+<p>例如我想获取到Chris的仓库的数据，我只需要发送一个get请求给<code>api.github.com/users/chriscoyier/repos</code>  </p>
+<p>这样就是一个fetch请求：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这是不是很简单！！！  </p>
+<p>接下来Fetch返回的是一个Promise对象，这是一个不需要回调函数就可以操作异步方法的对象。  </p>
+<p>获取到数据之后，我们将我们需要进行的一些操作放在<code>.then</code>方法里  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;<span class="comment">/* do something */</span>&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>如果你是第一次使用fetch，你会对它返回的response十分惊喜。如果你使用<code>console.log(response)</code>，你将得到下面这些信息</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">false</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok : <span class="literal">true</span></span><br><span class="line">  redirected : <span class="literal">false</span></span><br><span class="line">  status : <span class="number">200</span></span><br><span class="line">  statusText : <span class="string">&quot;OK&quot;</span></span><br><span class="line">  type : <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url : <span class="string">&quot;http://some-website.com/some-url&quot;</span></span><br><span class="line">  __proto__ : Response</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里，你会看到fetch会返回给你一些参数，这些参数会告诉你请求的状态。你会看到请求成功（ok: true; status: 200）。但是你也许注意到了, 在这些参数中你看不到任何你请求成功的数据！！  </p>
+<p>事实就是如此，我们从GitHub获取的数据隐藏在body的可读文档流中。我们需要一个合适的方法去转换这些文档流，让它们变成我们可以使用的数据。<br>我们知道GitHub返回的是一串json数据，我们可以使用<code>response.json</code>来转换这些数据。  </p>
+<p>这里有一些其他的方法去处理不同类型的数据。如果返回的数据是XML格式的。可以用<code>response.text</code>进行数据转换；如果返回的数据是图片。可以用<code>response.blob</code>  </p>
+<p>所有的这些转换方法（<code>response.json</code> 或者其他所有的）返回的都是另一个Promise对象，我们可以再用一个<code>.then</code>方法来获取这些数据。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> response.json())</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// Here&#x27;s a list of repos!</span></span><br><span class="line">    <span class="built_in">console</span>.log(data)</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>OK!!这就是一个完整的用fetch进行异步操作的代码了。简短且简单🧲</p>
+<h3 id="用Fetch发送数据"><a href="#用Fetch发送数据" class="headerlink" title="用Fetch发送数据"></a>用Fetch发送数据</h3><p>使用fetch发送消息是十分优雅的，你可以只需要配置一下配置项就可以使用。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, options);</span><br></pre></td></tr></table></figure>
+
+<p>第一个参数，你需要设置你提交请求的方式。如果你没有设置，fetch会自动将设置为get  </p>
+<p>第二个参数，设置你的请求头。在现在这个时间段，我们主要用的是json数据。所以我们就设置<code>content-Type</code>为<code>application/json</code>  </p>
+<p>第三个参数，设置的是body里的json数据处理。我们使用json数据的时候通常要进行一些处理。所以我们通常会设置<code>JSON.stringify</code>  </p>
+<p>下面是一个post请求的实例：  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> content = &#123;<span class="attr">some</span>: <span class="string">&#x27;content&#x27;</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The actual fetch request</span></span><br><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  headers: &#123;</span><br><span class="line">    <span class="string">&#x27;Content-Type&#x27;</span>: <span class="string">&#x27;application/json&#x27;</span></span><br><span class="line">  &#125;,</span><br><span class="line">  body: <span class="built_in">JSON</span>.stringify(content)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// .then()...</span></span><br></pre></td></tr></table></figure>
+
+<p>如果你的眼光足够敏锐，你就会发现有一些模版代码对于很多<code>post</code>,<code>put</code>和<code>delete</code>请求都适用。当我们已经明确了我们会发送json数据的时候，我们可以重复的将头部设置为<code>JSON.stringify</code>  </p>
+<p>但是即使我们使用模板代码，fetch依然可以把异步请求实现的很好。  </p>
+<p>然而当使用fetch的时候处理错误信息的时候，并没有像处理成功信息这么容易。。。  </p>
+<h3 id="使用fetch处理错误信息"><a href="#使用fetch处理错误信息" class="headerlink" title="使用fetch处理错误信息"></a>使用fetch处理错误信息</h3><p>尽管我们一直希望ajax请求能成功，但是有时候它总是会失败的。一旦失败，有很多种可能性导致fetch请求失败。包括并不限于以下这几点：  </p>
+<ol>
+<li>你尝试去请求一个不存在的资源。</li>
+<li>你没有权限去获取资源。</li>
+<li>你设置的一些的请求参数错误。</li>
+<li>服务器抛出错误。</li>
+<li>服务器请求超时。</li>
+<li>服务器宕机。</li>
+<li>后台的API改变</li>
+<li>。。。</li>
+</ol>
+<p>如果你的请求失败了，那么就大事不妙了！！你可以想象这样的一种情景，你正在进行网上购物。这时，一个错误产生了，但是设计这个网站的人并没有设计处理请求错误的函数。因此，在你点击购买之后，一切都静止了，什么变化都没有发生。那个页面就挂在那儿，你不知道发生了什么，不知道你是否购买成功了。  </p>
+<p>现在，让我们去尝试获取一个不存在的资源来学习来学习如何在使用Fetch的时候处理错误。举个例子，我们错误的把<code>chriscoyier</code>拼写成了<code>chrissycoyier</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Fetching chrissycoyier&#x27;s repos instead of chriscoyier&#x27;s repos</span></span><br><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>我们知道这个请求会产生错误，因为在GitHub上是没有<code>chrissycoyier</code>的。因为错误是promise对象返回的，我们使用<code>catch</code>去处理它。  </p>
+<p>在不知道具体的处理方法之前，你可能会写出这样一段代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> response.json())</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;data is&#x27;</span>, data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;error is&#x27;</span>, error));</span><br></pre></td></tr></table></figure>
+
+<p>然后触发你的fetch请求，你将会得到这样的一个结果：</p>
+<p><img src="/images/Fetch/error1.png" alt="image"></p>
+<blockquote>
+<p>Fetch failed, but the code that gets executed is the second <code>.then</code> instead of <code>.catch</code></p>
+</blockquote>
+<p>为什么第二个<code>.then</code>方法会调用执行？为什么promise不想我们所期望的那样使用<code>.catch</code>去捕获错误。太恐怖了！！！😱😱😱  </p>
+<p>如果我们使用<code>console.log</code>去执行响应回来的数据。我们会看到一些不同的值  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">true</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok: <span class="literal">false</span> <span class="comment">// Response is not ok</span></span><br><span class="line">  redirected: <span class="literal">false</span></span><br><span class="line">  status: <span class="number">404</span> <span class="comment">// HTTP status is 404.</span></span><br><span class="line">  statusText: <span class="string">&quot;Not Found&quot;</span> <span class="comment">// Request not found</span></span><br><span class="line">  type: <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url: <span class="string">&quot;https://api.github.com/users/chrissycoyier/repos&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这些数据大部分都是正常的，比如<code>ok</code>,<code>status</code>和<code>statusText</code>。并且，如同我们所预料是我一样，我们并没有在这其中发现chrissycoyier在GitHub上的数据。  </p>
+<p>这个例子充分告诉了我们一件十分重要的事情，Fetch并不会关注你的ajax是否成功。它只关注发送请求，并且从从服务器收到响应。这意味着当请求失败时，我们需要自己抛出错误。  </p>
+<p>因此，在第一个<code>.then</code>请求中，只有当请求成功时，才应该对返回的数据进行处理。验证请求是否成功其实很简单，只需要判断<code>response</code>是否为<code>ok</code>就可以了。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// Find some way to get to execute .catch()</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>当我们知道我们的请求并没有成功时，我们可以通过<code>throw</code>抛出一个错误，或者使用Promise中的<code>reject</code>去激活<code>catch</code>方法。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// throwing an Error</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// rejecting a Promise</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上的两种方式，使用任意一种就可以了。因为这两种方式都可以激活<code>.catch</code>方法  </p>
+<p>在这里，我选择去使用<code>Promise.reject</code>,因为它更容易去执行。<code>Errors</code>也很好，但是它的执行比较困难，它唯一的好处是它在堆栈跟踪方面有着得天独厚的优势，但再Fetch方法中我们并不需要这种特质。  </p>
+<p>所以，代码就变成了这样： </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;data is&#x27;</span>, data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;error is&#x27;</span>, error));</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/eFetch/error2.png" alt="image"></p>
+<blockquote>
+<p>Failed request, but error gets passed into catch correctly</p>
+</blockquote>
+<p>太好了！！现在我们有办法去捕获错误了。  </p>
+<p>但是我们这样处理错误信息返回一个普通的文本并不是特别的友好。我们并不知道究竟是什么地方出问题了。我十分确信再遇到错误时收到这样一个错误信息你并不会感到十分愉快。。。</p>
+<p><img src="/images/Fetch/error3.png" alt="image"></p>
+<blockquote>
+<p>Yeah… I get it that something went wrong… but what exactly? 🙁</p>
+</blockquote>
+<p>到底是什么错了？是服务器超时了吗？是我的连接被切断了吗？我们没有方法去得知！我们需要一种方法能告诉我们请求发生了什么错误，然后我们就可以很方便的处理它。  </p>
+<p>让我们再来看一看返回的信息，看能不能找到什么灵感</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">true</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok: <span class="literal">false</span> <span class="comment">// Response is not ok</span></span><br><span class="line">  redirected: <span class="literal">false</span></span><br><span class="line">  status: <span class="number">404</span> <span class="comment">// HTTP status is 404.</span></span><br><span class="line">  statusText: <span class="string">&quot;Not Found&quot;</span> <span class="comment">// Request not found</span></span><br><span class="line">  type: <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url: <span class="string">&quot;https://api.github.com/users/chrissycoyier/repos&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>oh,太好了！在这个案例中，错误的原因是我们请求的资源不存在。我们可以返回一个404状态码。这样我们就知道该做什么了。  </p>
+<p>将<code>status</code>和<code>statusText</code>放入<code>.catch</code>方法中，我们可以使用<code>.reject</code>来做这件事:  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(&#123;</span><br><span class="line">        status: response.status,</span><br><span class="line">        statusText: response.statusText</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (error.status === <span class="number">404</span>) &#123;</span><br><span class="line">      <span class="comment">// do something about 404</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br></pre></td></tr></table></figure>
+
+<p>好！现在想对于之前已经有了很大的进展了！   </p>
+<p>这种错误处理方式对于不需要特定解释的那些确定的HTTP状态是已经完全足够了的，像：</p>
+<ul>
+<li>401: Unauthorized</li>
+<li>404: Not found</li>
+<li>408: Connection timeout</li>
+</ul>
+<p>但是它对于这一种情况就会显得特别不友好：</p>
+<ul>
+<li>400: Bad request.</li>
+</ul>
+<p>是什么造成了一个错误的请求？太多的可能性了！例如，如果你丢失了一些必要的参数，会返回400。</p>
+<p><img src="/images/Fetch/error4.png" alt="image"></p>
+<blockquote>
+<p>Stripe’s explains it returns a 400 error if the request is missing a required field</p>
+</blockquote>
+<p>如果我们只像之前一样处理的话，那么只会返回一个400错误。我们就不知道究竟发生了什么。我们需要更多的信息来告诉我们，究竟缺少了什么？是用户忘记填写了姓名？邮箱？还是信用卡信息？我们并不知道。  </p>
+<p>理想的来说，这种情况下服务器应该返回一个对象，告诉我们请求为什么会失败。如果你的后台使用的是node和express，你可能会这么写。  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">res.status(<span class="number">400</span>).send(&#123;</span><br><span class="line">  err: <span class="string">&#x27;no first name&#x27;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们不能再第一个<code>.then</code>方法里使用reject,因为我们只能在执行了<code>response.json</code>之后才能读取服务器抛出的错误，然后我们才能决定我们做些什么。  </p>
+<p>就像下面这些代码：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-error&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResponse</span>(<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.json()</span><br><span class="line">    .then(<span class="function"><span class="params">json</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(json)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>让我们剖析一下这一坨代码究竟在干啥！首先我们使用<code>response.json</code>来读取服务器返回给我们的json数据。因为<code>response.json</code>返回的是一个json对象，所以我们可以立即使用<code>.then</code>方法去读取这个数据究竟是啥。  </p>
+<p>我们在第一个<code>.then</code>方法里包含着第二个<code>.then</code>方法因为我们需要去判断<code>response.ok</code>是否为真，从而判断响应是否成功  </p>
+<p>如果你想将 status和statusText和json一起发送给<code>.catch</code>,你可以使用<code>Object.assign()</code>将它们联合在一起。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> error = <span class="built_in">Object</span>.assign(&#123;&#125;, json, &#123;</span><br><span class="line">  status: response.status,</span><br><span class="line">  statusText: response.statusText</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">return</span> <span class="built_in">Promise</span>.reject(error)</span><br></pre></td></tr></table></figure>
+
+<p>使用新的<code>handelResponse</code>函数，你可以这样书写代码。这种方式可以自动将数据发送给<code>.then</code>和<code>.catch</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(error))</span><br></pre></td></tr></table></figure>
+
+<p>这是我们十分高兴，因为我们折腾了老半天，终于完成了对错误的处理。但是当我们坐下来，喝着咖啡，享受着这惬意的下午茶的时候。我们突然意识到。。。我们似乎还没有对响应数据做处理！！！</p>
+<h3 id="处理其他响应类型"><a href="#处理其他响应类型" class="headerlink" title="处理其他响应类型"></a>处理其他响应类型</h3><p>到目前为止，我们只处理了Fetch的json数据请求。这在当今90%的API都返回json数据的情况下解决了大部分的问题。  </p>
+<p>但是，另外的10%怎么办。。。  </p>
+<p>假如你使用上面的代码去接受XML的响应，你将立即捕获一个错误：</p>
+<p><img src="/images/Fetch/failed-text-response.png" alt="image"></p>
+<blockquote>
+<p>Parsing an invalid JSON produces a Syntax error</p>
+</blockquote>
+<p>因为返回的是一串xml数据，而非json数据。最简单的，我们不能返回<code>response.json</code>, 取而代之的是<code>response.text</code>。想要这么做的话，我们需要检查请求头里的 content type</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">.then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> contentType = response.headers.get(<span class="string">&#x27;content-type&#x27;</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;application/json&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> response.json()</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;text/html&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> response.text()</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Handle other responses accordingly...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面是之前所有代码的一个合集：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(error))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> contentType = response.headers.get(<span class="string">&#x27;content-type&#x27;</span>)</span><br><span class="line">  <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;application/json&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> handleJSONResponse(response)</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;text/html&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> handleTextResponse(response)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Other response types as necessary. I haven&#x27;t found a need for them yet though.</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">`Sorry, content-type <span class="subst">$&#123;contentType&#125;</span> not supported`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleJSONResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.json()</span><br><span class="line">    .then(<span class="function"><span class="params">json</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="built_in">Object</span>.assign(&#123;&#125;, json, &#123;</span><br><span class="line">          status: response.status,</span><br><span class="line">          statusText: response.statusText</span><br><span class="line">        &#125;))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleTextResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.text()</span><br><span class="line">    .then(<span class="function"><span class="params">text</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(&#123;</span><br><span class="line">          status: response.status,</span><br><span class="line">          statusText: response.statusText,</span><br><span class="line">          err: text</span><br><span class="line">        &#125;)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果你决定使用Fetch，那么你将会经常使用到<code>control</code>+<code>c</code>/<code>v</code>。如果需要在项目中大量使用Fetch的话，下面介绍了一个Fetch的库–zIFetch.</p>
+<h3 id="介绍-zIFetch"><a href="#介绍-zIFetch" class="headerlink" title="介绍 zIFetch"></a>介绍 zIFetch</h3><p>zIFetch是一个抽象了数据处理函数的库，它让你只需要关心数据和错误处理而不需要担心响应。</p>
+<p>使用zlFetch，首先你可以这么安装它。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install zl-fetch --save</span><br></pre></td></tr></table></figure>
+
+<p>然后，你可以在库里引用它。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Polyfills (if needed)</span></span><br><span class="line"><span class="built_in">require</span>(<span class="string">&#x27;isomorphic-fetch&#x27;</span>) <span class="comment">// or whatwg-fetch or node-fetch if you prefer</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ES6 Imports</span></span><br><span class="line"><span class="keyword">import</span> zlFetch <span class="keyword">from</span> <span class="string">&#x27;zl-fetch&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// CommonJS Imports</span></span><br><span class="line"><span class="keyword">const</span> zlFetch = <span class="built_in">require</span>(<span class="string">&#x27;zl-fetch&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>zIFetch不仅仅可以移除处理Fetch响应数据的需要。它还可以帮你发送数据而不需要在body里对数据进行转换</p>
+<p>下面的这些代码就是一个例子：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> content = &#123;<span class="attr">some</span>: <span class="string">&#x27;content&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Post request with fetch</span></span><br><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  headers: &#123;<span class="string">&#x27;Content-Type&#x27;</span>: <span class="string">&#x27;application/json&#x27;</span>&#125;</span><br><span class="line">  body: <span class="built_in">JSON</span>.stringify(content)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Post request with zlFetch</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  body: content</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>zIFetch还使得web Tokens认证变得更加容易</p>
+<p>身份验证的标准是在头部添加一个<code>Authorization</code>密钥。<code>Authorization</code>的内容将会设置到<code>Bearer your-token-here</code>。zlFetch将帮助你添加这个<code>token</code>配置的字段。</p>
+<p>所以下面这两段代码实际上是等价的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> token = <span class="string">&#x27;someToken&#x27;</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  headers: &#123;</span><br><span class="line">    Authorization: <span class="string">`Bearer <span class="subst">$&#123;token&#125;</span>`</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Authentication with JSON Web Tokens with zlFetch</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;token&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Fetch是一项十分神奇的技术，它使得收发消息变得更加容易。我们不需要使用XHR请求，也不需要引入像jQuery一样的库。</p>
+<p>尽管Fetch很好，但是它处理起错误来却并不简单。你需要将许多错误信息传递到<code>.catch</code>方法中</p>
+<p>使用zlFetch可以避免进行错误处理。</p>
+<h3 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h3><p><a target="_blank" rel="noopener" href="https://css-tricks.com/using-fetch/">Using Fetch</a> </p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://cdn.redrock.team/hello-student_music1.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='true'
+        data-ae='true'
+        data-ci='b6ecefc4bbca5c566933'
+        data-cs='ee266e05d6d467746681de2690e39a5aafe7276d'
+        data-r='myjdml.github.io'
+        data-o='myjdml'
+        data-a='myjdml'
+        data-d='true'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body>
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>

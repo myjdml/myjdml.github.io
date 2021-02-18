@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Git在前端项目中的一些使用 - Code_Master&#39;s blog</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="Git链接远程仓库当我们创建了一个项目的时候。首先我们应该把本地的Git仓库和远端的Git仓库连接起来。  
+1$ git remote add origin git@github.com:mich,"> 
+    <meta name="author" content="Yaojun Mao"> 
+    <link rel="alternative" href="atom.xml" title="Code_Master&#39;s blog" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Code_Master&#39;s blog</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://yoursite.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">Git在前端项目中的一些使用</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">Git在前端项目中的一些使用</h1>
+        <div class="stuff">
+            <span>十月 04, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/git/" rel="tag">git</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <h2 id="Git链接远程仓库"><a href="#Git链接远程仓库" class="headerlink" title="Git链接远程仓库"></a>Git链接远程仓库</h2><p>当我们创建了一个项目的时候。首先我们应该把本地的Git仓库和远端的Git仓库连接起来。  </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote add origin git@github.com:michaelliao/learngit.git</span></span><br></pre></td></tr></table></figure>
+<p>我们可以使用下面的这个命令查看连接的远程仓库</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote -v</span></span><br></pre></td></tr></table></figure>
+<p>接着，我们就可以向远程仓库提交内容了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push -u origin master</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>第一次提交的时候，需要加上<code>-u</code>参数，它不仅会把本地的master仓库推送到远程的master仓库，而且会把两者关联起来。这样的话在以后的提交中就可以简化命令，不用携带<code>-u</code>参数  </p>
+</blockquote>
+<p>同时，当你连接了远程仓库之后，你就可以随时使用<code>git pull</code>来拉取你远程仓库里的代码。</p>
+<h2 id="一次命令push多个远程仓库"><a href="#一次命令push多个远程仓库" class="headerlink" title="一次命令push多个远程仓库"></a>一次命令push多个远程仓库</h2><p>git支持绑定多个push的远程地址，所以我们可以添加多个地址，可以做到一行代码，同时提交到多个仓库。  </p>
+<p>使用如下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote <span class="built_in">set</span>-url --add github &lt;你的仓库地址&gt;</span></span><br></pre></td></tr></table></figure>
+<p>也可以直接修改配置文件进行添加：</p>
+<blockquote>
+<p>打开 .git/config 找到 [remote “github”]，添加对应的 url 即可</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[remote &quot;github&quot;]</span><br><span class="line">    url = https://github.com/zxbetter/test.git</span><br><span class="line">    fetch = +refs/heads/*:refs/remotes/github/*</span><br><span class="line">    url = https://git.oschina.net/zxbetter/test.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建新分支"><a href="#创建新分支" class="headerlink" title="创建新分支"></a>创建新分支</h2><p>首先，我们创建dev分支，并且切换到dev分支</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -b dev</span></span><br></pre></td></tr></table></figure>
+<p>当然，使用<code>-b</code>参数是简化命令，通过下面的两条命令也可以达到一样的效果：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch dev</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git checkout dev</span></span><br></pre></td></tr></table></figure>
+<p>然后，你可以使用<code>git branch</code>查看当前的分支<br>这一切做好之后，我们就可以使用<code>git checkout &lt;分支名&gt;</code>在不同的分支之间进行任意的切换</p>
+<h2 id="合并分支"><a href="#合并分支" class="headerlink" title="合并分支"></a>合并分支</h2><p>合并分支非常的简单，只需要一行命令即可</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git merge dev</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="comment"># 将dev分支的内容合并到当前分支上</span></span></span><br></pre></td></tr></table></figure>
+<p>但是，这行命令并不是所有时候都会顺利的被执行。如果两个分支的同一文件差异较大，则会产生冲突，这个时候就需要打开产生冲突的文件进行手动的修复。</p>
+<h2 id="commit的一些规范"><a href="#commit的一些规范" class="headerlink" title="commit的一些规范"></a>commit的一些规范</h2><h3 id="一些常规的commit规范"><a href="#一些常规的commit规范" class="headerlink" title="一些常规的commit规范"></a>一些常规的commit规范</h3><ul>
+<li>type: commit 的类型</li>
+<li>feat: 新特性</li>
+<li>fix: 修改问题</li>
+<li>refactor: 代码重构</li>
+<li>docs: 文档修改</li>
+<li>style: 代码格式修改, 注意不是 css 修改</li>
+<li>test: 测试用例修改</li>
+<li>chore: 其他修改, 比如构建流程, 依赖管理.</li>
+<li>scope: commit 影响的范围, 比如: route, component, utils, build…</li>
+<li>subject: commit 的概述, 建议符合  50/72 formatting</li>
+<li>body: commit 具体修改内容, 可以分为多行, 建议符合 50/72 formatting</li>
+<li>footer: 一些备注, 通常是 BREAKING CHANGE 或修复的 bug 的链接.</li>
+</ul>
+<h3 id="Commitizen-替代你的-git-commit"><a href="#Commitizen-替代你的-git-commit" class="headerlink" title="Commitizen: 替代你的 git commit"></a>Commitizen: 替代你的 git commit</h3><p>这是一个特别神奇的工具，可以帮助我们实现git commit规范，使用了这个插件，我们就可以使用<code>git cz</code>命令来代替<code>git commit</code>来提交规范。  </p>
+<h3 id="全局安装"><a href="#全局安装" class="headerlink" title="全局安装"></a>全局安装</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install -g commitizen cz-conventional-changelog</span><br><span class="line">echo &#x27;&#123; &quot;path&quot;: &quot;cz-conventional-changelog&quot; &#125;&#x27; &gt; ~/.czrc</span><br><span class="line"><span class="meta">#</span><span class="bash"> 全局模式下, 需要 ~/.czrc 配置文件, 为 commitizen 指定 Adapter.</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="在项目里安装"><a href="#在项目里安装" class="headerlink" title="在项目里安装"></a>在项目里安装</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -D commitizen cz-conventional-changelog</span><br></pre></td></tr></table></figure>
+<p>package.json中的配置</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&quot;script&quot;: &#123;</span><br><span class="line">    ...,</span><br><span class="line">    &quot;commit&quot;: &quot;git-cz&quot;,</span><br><span class="line">&#125;,</span><br><span class="line">&quot;config&quot;: &#123;</span><br><span class="line">    &quot;commitizen&quot;: &#123;</span><br><span class="line">        &quot;path&quot;: &quot;node_modules/cz-conventional-changelog&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果全局安装过 commitizen, 那么在对应的项目中执行 git cz or npm run commit 都可以.</p>
+<p>效果如下:<br><img src="https://user-gold-cdn.xitu.io/2018/5/16/16369a14ec8704fc?imageslim" alt="img"></p>
+<h2 id="杂记"><a href="#杂记" class="headerlink" title="杂记"></a>杂记</h2><ul>
+<li>当我们发现每次push的时候都要输入git的帐号和密码时，但我们又不想用ssh连接。这个时候我们就可以尝试去使用这么一行命令<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git config --global credential.helper store</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这行命令产生的作用只有一个，就是在本地全局建立一个文本，在你每次输入帐号和密码的时候记录当前的帐号和密码。这样的话，只需要输入一次帐号和密码，之后push的时候就都不需要输入了！</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="Ref"><a href="#Ref" class="headerlink" title="Ref"></a>Ref</h2><p><a target="_blank" rel="noopener" href="https://www.liaoxuefeng.com/wiki/896043488029600/898732864121440">廖雪峰的官方网站</a><br><a target="_blank" rel="noopener" href="https://juejin.im/post/6844903606815064077">优雅的提交你的 Git Commit Message</a></p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://cdn.redrock.team/hello-student_music1.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='true'
+        data-ae='true'
+        data-ci='b6ecefc4bbca5c566933'
+        data-cs='ee266e05d6d467746681de2690e39a5aafe7276d'
+        data-r='myjdml.github.io'
+        data-o='myjdml'
+        data-a='myjdml'
+        data-d='true'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body>
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
