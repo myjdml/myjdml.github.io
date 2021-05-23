@@ -1,7 +1,8 @@
 ---
-title: about
+title: 关于
 date: 2020-09-02 16:39:08
 type: "about"
+cover: https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/Blog/image/about.JPG
 ---
 
 ## Code_Master · 符师 · myjdml

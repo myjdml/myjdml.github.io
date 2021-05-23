@@ -6,7 +6,8 @@ categories:
 tags: 
     - git
     - 前端
-mp3: http://cdn.redrock.team/hello-student_music1.mp3
+top_img: https://user-gold-cdn.xitu.io/2018/5/16/16369a14ec8704fc?imageslim
+cover: https://user-gold-cdn.xitu.io/2018/5/16/16369a14ec8704fc?imageslim
 ---
 
 ## Git链接远程仓库

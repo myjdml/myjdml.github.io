@@ -3,17 +3,18 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Code_Master's blog
-subtitle: ''
+title: myjdml's blog
+subtitle: 'myjdml的个人空间'
 description: ''
 keywords:
-author: Yaojun Mao
+author: myjdml
 language: zh-CN
 timezone: ''
+email: 
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: http://code-master.cn
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -46,7 +47,7 @@ relative_link: false
 future: true
 highlight:
   enable: true
-  line_number: true
+  line_number: false
   auto_detect: false
   tab_replace: ''
   wrap: true
@@ -54,7 +55,7 @@ highlight:
 prismjs:
   enable: false
   preprocess: true
-  line_number: true
+  line_number: false
   tab_replace: ''
 
 # Home page setting
@@ -98,7 +99,7 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: diaspora
+theme: butterfly
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
@@ -107,7 +108,7 @@ deploy:
   repo: 
     github: https://github.com/myjdml/myjdml.github.io.git
     gitee: https://gitee.com/myjdml/myjdml.git
-    ali: git@39.103.139.147:/var/repo/hexo.git
+    ali: git@159.75.114.137:/var/repo/hexo.git
   branch: master
 
 # 搜索配置文件

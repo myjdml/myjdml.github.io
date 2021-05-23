@@ -6,7 +6,7 @@ categories:
 tags: 
     - js
     - Ajax
-mp3: http://cdn.redrock.team/hello-student_music1.mp3
+top_img: ""
 ---
 
 ## Day01

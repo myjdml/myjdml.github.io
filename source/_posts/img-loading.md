@@ -7,7 +7,6 @@ tags:
     - js
     - http
     - 兼容性
-mp3: http://cdn.redrock.team/hello-student_music1.mp3
 ---
 
 ## 图片访问403 Forbidden的问题

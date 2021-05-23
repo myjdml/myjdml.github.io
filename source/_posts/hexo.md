@@ -5,7 +5,6 @@ categories:
     - JavaScript
 tags: 
     - hexo
-mp3: http://cdn.redrock.team/hello-student_music1.mp3
 ---
 
 ## 写在前面
