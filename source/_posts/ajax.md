@@ -6,7 +6,8 @@ categories:
 tags: 
     - js
     - Ajax
-top_img: ""
+top_img: https://media.geeksforgeeks.org/wp-content/uploads/20200610193715/AJAX.png
+cover: https://media.geeksforgeeks.org/wp-content/uploads/20200610193715/AJAX.png
 ---
 
 ## Day01

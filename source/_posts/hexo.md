@@ -5,6 +5,8 @@ categories:
     - JavaScript
 tags: 
     - hexo
+top_img: https://pic2.zhimg.com/v2-7827197bfa0023932d428633d41372fd_1440w.jpg?source=172ae18b
+cover: https://pic2.zhimg.com/v2-7827197bfa0023932d428633d41372fd_1440w.jpg?source=172ae18b
 ---
 
 ## 写在前面
