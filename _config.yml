@@ -143,3 +143,9 @@ live2d:
     height: 300
   mobile:
     show: false # 手机中是否展示
+
+
+# aplayer
+## https://github.com/MoePlayer/hexo-tag-aplayer
+aplayer:
+  meting: true
