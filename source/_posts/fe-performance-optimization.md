@@ -103,13 +103,13 @@ DNS预解析分为自动解析和主动解析
 
   > 对于HTTPS网页，如果你希望它开启自动解析功能时，添加如下标记：
   >
-  > ```
+  > ```html
   > <meta http-equiv="x-dns-prefetch-control" content="on">
   > ```
   >
   > 希望在HTTP页面关闭自动解析功能时，添加如下标记：
   >
-  > ```
+  > ```html
   > <meta http-equiv="x-dns-prefetch-control" content="off">
   > ```
 
@@ -609,4 +609,4 @@ window.addEventListener('scroll', lazyload, false);
 - [《前端性能优化原理与实践》](https://juejin.im/book/5b936540f265da0a9624b04b)
 - [ Web 开发最佳实践手册 - Google](https://developers.google.com/web/fundamentals/performance/why-performance-matters)
 - [前端性能优化之雅虎35条军规](https://juejin.cn/post/6844903657318645767#heading-12)
-- [前端性能优化总结](
+- [前端性能优化总结](https://juejin.cn/post/6844904195707895816#heading-5)
