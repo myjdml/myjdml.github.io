@@ -144,8 +144,39 @@ live2d:
   mobile:
     show: false # 手机中是否展示
 
-
 # aplayer
 ## https://github.com/MoePlayer/hexo-tag-aplayer
 aplayer:
   meting: true
+
+# hexo-douban
+## https://github.com/mythsman/hexo-douban
+douban:
+  user: myjdml
+  builtin: true
+  book:
+    title: 'myjdml的读书列表'
+    quote: '不是给时光以岁月，而是给岁月以时光'
+  movie:
+    title: 'myjdml的电影列表'
+    quote: 'This is my movie quote'
+  game:
+    title: 'myjdml的游戏列表'
+    quote: 'This is my game quote'
+  timeout: 10000 
+
+
+# hexo-bilibili-bangumi
+## https://github.com/HCLonely/hexo-bilibili-bangumi
+bangumi:
+  enable: true
+  path: /bilibili/
+  vmid: 31880529
+  title: '追番列表'
+  quote: '生命不息，追番不止！'
+  show: 1
+  loading:
+  metaColor:
+  color:
+  webp:
+  progress:
