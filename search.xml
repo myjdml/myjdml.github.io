@@ -1,0 +1,1396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Copy&amp;Paste</title>
+    <url>/2021/08/13/Copy-Paste/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近在掘金上看到这样一篇文章 <a href="https://juejin.cn/post/6906635620752293902#heading-4">这个 29.7 K 的剪贴板 JS 库有点东西！</a> </p>
+<p>文中说的clipboard剪切板库引起了我的兴趣，借这个机会刚好研究一下，浏览器有关剪切版的实现</p>
+<p>话不多说，我们先来分析一下clipblard.js的源码</p>
+<h2 id="clipblard-js源码分析"><a href="#clipblard-js源码分析" class="headerlink" title="clipblard.js源码分析"></a>clipblard.js源码分析</h2><p>首先，这个项目里使用了两个第三方库——<a href="https://github.com/scottcorgan/tiny-emitter">tiny-emitter</a>和<a href="https://github.com/zenorocha/good-listener">good-listener</a>。分别用于事件监听和事件。关于这两个库的具体用法，本文就不赘述了。详细使用可以去GitHub查看。</p>
+<h3 id="简单使用"><a href="#简单使用" class="headerlink" title="简单使用"></a>简单使用</h3><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 1. Define some markup --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">id</span>=<span class="string">&quot;foo&quot;</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">value</span>=<span class="string">&quot;hello&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span></span></span><br><span class="line"><span class="tag">            <span class="attr">class</span>=<span class="string">&quot;btn&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">data-clipboard-action</span>=<span class="string">&quot;copy&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">data-clipboard-target</span>=<span class="string">&quot;#foo&quot;</span></span></span><br><span class="line"><span class="tag">            &gt;</span></span><br><span class="line">        Copy</span><br><span class="line">    <span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 2. Include library --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../dist/clipboard.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 3. Instantiate clipboard --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">var</span> clipboard = <span class="keyword">new</span> ClipboardJS(<span class="string">&#x27;.btn&#x27;</span>);</span></span><br><span class="line"></span><br><span class="line"><span class="javascript">        clipboard.on(<span class="string">&#x27;success&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">            <span class="built_in">console</span>.log(e);</span></span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"><span class="javascript">        clipboard.on(<span class="string">&#x27;error&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">            <span class="built_in">console</span>.log(e);</span></span><br><span class="line">        &#125;);</span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>上述代码是对clipboard的一个简单使用。首先，我们需要获取需要获取到需要复制的区域。上面的这个例子是通过自定义属性<code>data-clipboard-action</code>规定操作类型（复制、粘贴）, <code>data-clipboard-target</code>规定选择区域。我们也要可以把这个操作放在JavaScript里面来做</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 1. Define some markup --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>Copy<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>hello<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 2. Include library --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../dist/clipboard.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 3. Instantiate clipboard --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">var</span> clipboard = <span class="keyword">new</span> ClipboardJS(<span class="string">&#x27;.btn&#x27;</span>, &#123;</span></span><br><span class="line"><span class="javascript">            target: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">                <span class="keyword">return</span> <span class="built_in">document</span>.querySelector(<span class="string">&#x27;div&#x27;</span>);</span></span><br><span class="line">            &#125;,</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"><span class="javascript">        clipboard.on(<span class="string">&#x27;success&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">            <span class="built_in">console</span>.log(e);</span></span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"><span class="javascript">        clipboard.on(<span class="string">&#x27;error&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">            <span class="built_in">console</span>.log(e);</span></span><br><span class="line">        &#125;);</span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="构造函数"><a href="#构造函数" class="headerlink" title="构造函数"></a>构造函数</h3><p>我们在使用clipboard之前，首先需要创建一个clipboard对象</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> clipboard = <span class="keyword">new</span> ClipboardJS(<span class="string">&#x27;.btn&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>我们就先从这里入手，来看一看</p>
+<p><code>Clipboards</code>类定义在了根目录的clipboard.js里。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">constructor</span>(trigger, options) &#123;</span><br><span class="line">    <span class="built_in">super</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">this</span>.resolveOptions(options);</span><br><span class="line">    <span class="built_in">this</span>.listenClick(trigger);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在构造函数里，trigger是必填参数。它可选的参数类型是<code>String|HTMLElement|HTMLCollection|NodeList</code>, 一般我们输入的都是String，通过类选择器选择到相应的标签。</p>
+<p>我们先看<code>this.listenClick()</code>方法</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">listenClick(trigger) &#123;</span><br><span class="line">	<span class="built_in">this</span>.listener = listen(trigger, <span class="string">&#x27;click&#x27;</span>, <span class="function">(<span class="params">e</span>) =&gt;</span> <span class="built_in">this</span>.onClick(e));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里把传入的trigger通过<code>good-listenr</code>进行监听，当其触发点击事件的时候会触发<code>onClick</code>方法。</p>
+<p>接下来我们先来说说构造函数里的另一个参数和方法，options是一个可选参数，其中有 四个属性：action, target, text, text, container。如果创建对象的时候未定义，那么，clipboard会默认使用默认预设。</p>
+<p><code>this.resolveOptions()</code>做的就是这件事情：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">resolveOptions(options = &#123;&#125;) &#123;</span><br><span class="line">    <span class="comment">// 判断action是否存在且为function，不存在则使用默认预设</span></span><br><span class="line">    <span class="built_in">this</span>.action =</span><br><span class="line">        <span class="keyword">typeof</span> options.action === <span class="string">&#x27;function&#x27;</span></span><br><span class="line">        ? options.action</span><br><span class="line">    	: <span class="built_in">this</span>.defaultAction;</span><br><span class="line">    <span class="comment">// 判断target是否存在且为function，不存在则使用默认预设</span></span><br><span class="line">    <span class="built_in">this</span>.target =</span><br><span class="line">        <span class="keyword">typeof</span> options.target === <span class="string">&#x27;function&#x27;</span></span><br><span class="line">        ? options.target</span><br><span class="line">    	: <span class="built_in">this</span>.defaultTarget;</span><br><span class="line">    <span class="comment">// 判断text是否存在且为function，不存在则使用默认预设</span></span><br><span class="line">    <span class="built_in">this</span>.text =</span><br><span class="line">        <span class="keyword">typeof</span> options.text === <span class="string">&#x27;function&#x27;</span> ? options.text : <span class="built_in">this</span>.defaultText;</span><br><span class="line">    <span class="comment">// 判断焦点元素是否传入，如果未传入吧的话默认使用document.body为焦点元素。</span></span><br><span class="line">    <span class="built_in">this</span>.container =</span><br><span class="line">        <span class="keyword">typeof</span> options.container === <span class="string">&#x27;object&#x27;</span> ? options.container : <span class="built_in">document</span>.body;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="onClick"><a href="#onClick" class="headerlink" title="onClick()"></a>onClick()</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line">onClick(e) &#123;</span><br><span class="line">    <span class="keyword">const</span> trigger = e.delegateTarget || e.currentTarget;</span><br><span class="line">    <span class="keyword">const</span> selectedText = ClipboardActionDefault(&#123;</span><br><span class="line">        action: <span class="built_in">this</span>.action(trigger),</span><br><span class="line">        container: <span class="built_in">this</span>.container,</span><br><span class="line">        target: <span class="built_in">this</span>.target(trigger),</span><br><span class="line">        text: <span class="built_in">this</span>.text(trigger),</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Fires an event based on the copy operation result.</span></span><br><span class="line">    <span class="built_in">this</span>.emit(selectedText ? <span class="string">&#x27;success&#x27;</span> : <span class="string">&#x27;error&#x27;</span>, &#123;</span><br><span class="line">        action: <span class="built_in">this</span>.action,</span><br><span class="line">        text: selectedText,</span><br><span class="line">        trigger,</span><br><span class="line">        clearSelection() &#123;</span><br><span class="line">            <span class="keyword">if</span> (trigger) &#123;</span><br><span class="line">                trigger.focus();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">document</span>.activeElement.blur();</span><br><span class="line">            <span class="built_in">window</span>.getSelection().removeAllRanges();</span><br><span class="line">        &#125;,</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个方法中，做的第一件事情是选取目标元素<code>e.currentTarget</code>，至于<code>e.delegateTarget</code>其实我个人没有太明白作者的意图，作者为写明注释。查阅第三方资料得知，这个属性只有jQuery有。所以个人猜测，作者的意图可能是如果<code>target</code>是由JQuery选择器选择的话，优先调用<code>delegateTarget</code>选择点击元素，否则就调用原生的<code>currentTarget</code>。</p>
+<p>然后<code>selectedText</code>会根据输入的一些预设进行处理。如果没有设置初始化参数，那么就会根据默认的设置进行初始化，如果传入了参数，则会由<code>ClipboardActionDefault()</code>进行处理。</p>
+<p>接着，会进行一个事件分发，如果我们监听了success或error事件的话，那么我们会得到一个上述结构的回调。</p>
+<p>其中，返回的<code>clearSelection()</code>函数会清除Selection中所有选择的块。</p>
+<h3 id="关于初始化的一些处理函数"><a href="#关于初始化的一些处理函数" class="headerlink" title="关于初始化的一些处理函数"></a>关于初始化的一些处理函数</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line">defaultAction(trigger) &#123;</span><br><span class="line">    <span class="keyword">return</span> getAttributeValue(<span class="string">&#x27;action&#x27;</span>, trigger);</span><br><span class="line">&#125;</span><br><span class="line">defaultTarget(trigger) &#123;</span><br><span class="line">    <span class="keyword">const</span> selector = getAttributeValue(<span class="string">&#x27;target&#x27;</span>, trigger);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (selector) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">document</span>.querySelector(selector);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">defaultText(trigger) &#123;</span><br><span class="line">    <span class="keyword">return</span> getAttributeValue(<span class="string">&#x27;text&#x27;</span>, trigger);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们以上面这三个默认事件处理函数为例，我们发现它们有一个共同点，就是都调用了函数<code>getAttributeValue(suffix, element)</code>。</p>
+<p>所以，我们先来看一看这个函数是干什么的</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Helper function to retrieve attribute value.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;String&#125;</span> <span class="variable">suffix</span></span></span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;Element&#125;</span> <span class="variable">element</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getAttributeValue</span>(<span class="params">suffix, element</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> attribute = <span class="string">`data-clipboard-<span class="subst">$&#123;suffix&#125;</span>`</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!element.hasAttribute(attribute)) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> element.getAttribute(attribute);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们看到函数的定义，首先看到的就是两个参数。</p>
+<ul>
+<li>第一个参数——<code>suffix</code>，它的作用是传入需要获取的类型。这点很好理解，我们看到上面的三个处理函数都传入的是其对应的类型。</li>
+<li>第二个参数——<code>element</code>，它传入的则是trigger，目标元素。</li>
+</ul>
+<p>这个函数做的事情就是结合suffix读取trigger里的自定义属性。如果有的话拿到对应的值返回，如果没有的话，直接返回。</p>
+<h3 id="一些静态方法"><a href="#一些静态方法" class="headerlink" title="一些静态方法"></a>一些静态方法</h3><h4 id="copy"><a href="#copy" class="headerlink" title="copy"></a>copy</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Allow fire programmatically a copy action</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;String|HTMLElement&#125;</span> <span class="variable">target</span></span></span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param <span class="type">&#123;Object&#125;</span> <span class="variable">options</span></span></span></span><br><span class="line"><span class="comment">   * <span class="doctag">@returns </span>Text copied.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"><span class="keyword">static</span> copy(target, options = &#123; <span class="attr">container</span>: <span class="built_in">document</span>.body &#125;) &#123;</span><br><span class="line">    <span class="keyword">return</span> ClipboardActionCopy(target, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对数据源做复制操作</p>
+<h4 id="cut"><a href="#cut" class="headerlink" title="cut"></a>cut</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Allow fire programmatically a cut action</span></span><br><span class="line"><span class="comment">* <span class="doctag">@param <span class="type">&#123;String|HTMLElement&#125;</span> <span class="variable">target</span></span></span></span><br><span class="line"><span class="comment">* <span class="doctag">@returns </span>Text cutted.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">static</span> cut(target) &#123;</span><br><span class="line">    <span class="keyword">return</span> ClipboardActionCut(target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>期末考试，就先写到这里。后续更新随缘</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>源码</category>
+      </categories>
+      <tags>
+        <tag>源码</tag>
+        <tag>前端</tag>
+        <tag>浏览器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Ajax简介</title>
+    <url>/2020/09/02/ajax/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="Day01"><a href="#Day01" class="headerlink" title="Day01"></a>Day01</h2><h3 id="网络相关概念"><a href="#网络相关概念" class="headerlink" title="网络相关概念"></a>网络相关概念</h3><ul>
+<li>查看本机ip <code>ifconfig</code></li>
+<li>连接到服务器 <code>ping baidu.com</code></li>
+<li>DNS服务器：解析域名<ul>
+<li>个人电脑将域名传输给DNS服务器，服务器返回ip地址，个人电脑再将ip地址传给电信路由器，再连接到远端服务器</li>
+</ul>
+</li>
+<li>真正访问时，会先访问本地host是否有自定义关系，如果有，则不会访问DNS服务器</li>
+</ul>
+<h3 id="php基本语法"><a href="#php基本语法" class="headerlink" title="php基本语法"></a>php基本语法</h3><h4 id="基本内容"><a href="#基本内容" class="headerlink" title="基本内容"></a>基本内容</h4><ul>
+<li><code>echo</code> 打印内容</li>
+<li>变量声明使用$运算符</li>
+<li>进行变量加减的时候，也需要加上$符号，否则不能进行; 字符串拼接要用<code>.</code>连接<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">$num1 = <span class="number">100</span>;</span><br><span class="line">$num2 = <span class="number">200</span>;</span><br><span class="line">$result = $num1 + $num2;</span><br><span class="line"><span class="keyword">echo</span> $result;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;br&gt;&quot;</span>;</span><br><span class="line"></span><br><span class="line">$str1 = <span class="string">&#x27;hi &#x27;</span>;</span><br><span class="line">$str2 = <span class="string">&quot; hello&quot;</span>;</span><br><span class="line">$str3 = $str1 . $str2;</span><br><span class="line"><span class="keyword">echo</span> $str3;</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;br&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="数组的使用"><a href="#数组的使用" class="headerlink" title="数组的使用"></a>数组的使用</h4><h5 id="基本应用"><a href="#基本应用" class="headerlink" title="基本应用"></a>基本应用</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">$arr = <span class="keyword">array</span>();</span><br><span class="line">$arr[<span class="number">0</span>] = <span class="string">&quot;zhangsan&quot;</span>;</span><br><span class="line">$arr[<span class="number">1</span>] = <span class="string">&quot;lisi&quot;</span>;</span><br><span class="line">$arr[<span class="number">2</span>] = <span class="string">&quot;wangwu&quot;</span>;</span><br><span class="line"><span class="comment">//echo不能输出复杂数据类型</span></span><br><span class="line"><span class="comment">//输出复杂数据类型需要用到下面这两个方法</span></span><br><span class="line">print_r($arr);</span><br><span class="line">var_dump($arr);</span><br><span class="line"><span class="comment">//将数组转化为json格式的字符串的方法</span></span><br><span class="line">json_encode($arr);</span><br><span class="line"></span><br><span class="line"><span class="comment">//自定义数组下标索引,剩下未定义的元素下标索引从“0”开始依次递增</span></span><br><span class="line">$arr1 = <span class="keyword">array</span>(<span class="string">&quot;name1&quot;</span>=&gt;<span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;lisi&quot;</span>, <span class="string">&quot;wangwu&quot;</span>);</span><br><span class="line">var_dump($arr1);</span><br></pre></td></tr></table></figure>
+
+<h5 id="二维数组"><a href="#二维数组" class="headerlink" title="二维数组"></a>二维数组</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">$arr2 = <span class="keyword">array</span>();</span><br><span class="line">$arr2[<span class="string">&quot;zhangsan&quot;</span>] = <span class="keyword">array</span>(<span class="string">&quot;age&quot;</span>=&gt;<span class="string">&quot;18&quot;</span>, <span class="string">&quot;sex&quot;</span>=&gt;<span class="string">&quot;male&quot;</span>, <span class="string">&quot;height&quot;</span>=&gt;<span class="string">&quot;180&quot;</span>);</span><br><span class="line">$arr2[<span class="string">&quot;lisi&quot;</span>] = <span class="keyword">array</span>(<span class="string">&quot;age&quot;</span>=&gt;<span class="string">&quot;18&quot;</span>, <span class="string">&quot;sex&quot;</span>=&gt;<span class="string">&quot;male&quot;</span>, <span class="string">&quot;height&quot;</span>=&gt;<span class="string">&quot;180&quot;</span>);</span><br><span class="line">$arr2[<span class="string">&quot;wangwu&quot;</span>] = <span class="keyword">array</span>(<span class="string">&quot;age&quot;</span>=&gt;<span class="string">&quot;18&quot;</span>, <span class="string">&quot;sex&quot;</span>=&gt;<span class="string">&quot;male&quot;</span>, <span class="string">&quot;height&quot;</span>=&gt;<span class="string">&quot;180&quot;</span>);</span><br><span class="line">var_dump($arr2);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;br&gt;&quot;</span>;</span><br><span class="line">$result = json_encode($arr2);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;$result &lt;br&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<h5 id="数组的遍历"><a href="#数组的遍历" class="headerlink" title="数组的遍历"></a>数组的遍历</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">//count()方法，用来计算数组的长度</span></span><br><span class="line">$arr3 = <span class="keyword">array</span>(<span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;lisi&quot;</span>, <span class="string">&quot;wangwu&quot;</span>);</span><br><span class="line"><span class="keyword">for</span> ($i = <span class="number">0</span>;$i &lt; count($arr3);$i++)&#123;</span><br><span class="line">    $temp = $arr3[$i];</span><br><span class="line">    <span class="keyword">echo</span> $temp . <span class="string">&quot;&lt;br&gt;&quot;</span>;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//通过键值对循环遍历</span></span><br><span class="line">$arr4 = <span class="keyword">array</span>(<span class="string">&quot;name1&quot;</span>=&gt;<span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;name2&quot;</span>=&gt;<span class="string">&quot;lisi&quot;</span>, <span class="string">&quot;name3&quot;</span>=&gt;<span class="string">&quot;wangwu&quot;</span>);</span><br><span class="line"><span class="keyword">foreach</span> ($arr4 <span class="keyword">as</span> $key =&gt; $value) &#123;</span><br><span class="line">    <span class="keyword">echo</span> $key . <span class="string">&quot;&gt;&gt;&gt;&quot;</span> . $value . <span class="string">&quot;&lt;br&gt;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="函数的使用"><a href="#函数的使用" class="headerlink" title="函数的使用"></a>函数的使用</h4><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">$arr5 = <span class="keyword">array</span>(<span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;lisi&quot;</span>, <span class="string">&quot;weangwu&quot;</span>);</span><br><span class="line"><span class="comment">//系统函数</span></span><br><span class="line">print_r($arr5);</span><br><span class="line">var_dump($arr5);</span><br><span class="line"><span class="keyword">echo</span> json_encode($arr5);</span><br><span class="line"><span class="comment">//自定义函数</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">add</span>(<span class="params">$num1, $num2</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> $num1 + $num2;</span><br><span class="line">&#125;</span><br><span class="line">$addResult = add(<span class="number">3</span>, <span class="number">4</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;计算结果为：&quot;</span> . $addResult;</span><br></pre></td></tr></table></figure>
+
+<h4 id="参数的获取"><a href="#参数的获取" class="headerlink" title="参数的获取"></a>参数的获取</h4><p>get请求参数跟在url后面，多个参数使用&amp;连接<br>post请求的参数在请求体中</p>
+<h5 id="get请求"><a href="#get请求" class="headerlink" title="get请求"></a>get请求</h5><ul>
+<li>预定义变量，处理get请求<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;checkUserName  &quot;</span>;</span><br><span class="line"><span class="comment">//通过key得到传过来的数据</span></span><br><span class="line">$username = $_GET[<span class="string">&quot;username&quot;</span>];</span><br><span class="line">$password = $_GET[<span class="string">&quot;password&quot;</span>];</span><br><span class="line"><span class="comment">//条件判断处理数据</span></span><br><span class="line"><span class="keyword">if</span> ($username === <span class="string">&quot;admin&quot;</span> &amp;&amp; $password === <span class="string">&quot;123&quot;</span>) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Login success&quot;</span>;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Login failed&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h5 id="post请求"><a href="#post请求" class="headerlink" title="post请求"></a>post请求</h5><ul>
+<li>预定义变量，处理post请求<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;checkUserName  &quot;</span>;</span><br><span class="line"><span class="comment">//通过key得到传过来的数据</span></span><br><span class="line">$username = $_POST[<span class="string">&quot;username&quot;</span>];</span><br><span class="line">$password = $_POST[<span class="string">&quot;password&quot;</span>];</span><br><span class="line"><span class="comment">//条件判断处理数据</span></span><br><span class="line"><span class="keyword">if</span> ($username === <span class="string">&quot;admin&quot;</span> &amp;&amp; $password === <span class="string">&quot;123&quot;</span>) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Login success&quot;</span>;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Login failed&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h5 id="实际应用"><a href="#实际应用" class="headerlink" title="实际应用"></a>实际应用</h5><figure class="highlight php"><table><tr><td class="code"><pre><span class="line">&lt;!doctype html&gt;</span><br><span class="line">&lt;html lang=<span class="string">&quot;en&quot;</span>&gt;</span><br><span class="line">&lt;head&gt;</span><br><span class="line">    &lt;meta charset=<span class="string">&quot;UTF-8&quot;</span>&gt;</span><br><span class="line">    &lt;meta name=<span class="string">&quot;viewport&quot;</span></span><br><span class="line">          content=<span class="string">&quot;width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0&quot;</span>&gt;</span><br><span class="line">    &lt;meta http-equiv=<span class="string">&quot;X-UA-Compatible&quot;</span> content=<span class="string">&quot;ie=edge&quot;</span>&gt;</span><br><span class="line">    &lt;title&gt;学生成绩结果&lt;/title&gt;</span><br><span class="line">    &lt;style&gt;</span><br><span class="line">        ul &#123;</span><br><span class="line">            <span class="keyword">list</span>-style: none;</span><br><span class="line">            color: darkred;</span><br><span class="line">        &#125;</span><br><span class="line">    &lt;/style&gt;</span><br><span class="line">&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line">    $data = <span class="keyword">array</span>();</span><br><span class="line">    $data[<span class="number">123</span>] = <span class="keyword">array</span>(<span class="string">&quot;name&quot;</span> =&gt; <span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;chinese&quot;</span> =&gt; <span class="string">&quot;103&quot;</span>, <span class="string">&quot;math&quot;</span> =&gt; <span class="string">&quot;136&quot;</span>, <span class="string">&quot;english&quot;</span> =&gt; <span class="string">&quot;222&quot;</span>);</span><br><span class="line">    $data[<span class="number">124</span>] = <span class="keyword">array</span>(<span class="string">&quot;name&quot;</span> =&gt; <span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;chinese&quot;</span> =&gt; <span class="string">&quot;153&quot;</span>, <span class="string">&quot;math&quot;</span> =&gt; <span class="string">&quot;125&quot;</span>, <span class="string">&quot;english&quot;</span> =&gt; <span class="string">&quot;522&quot;</span>);</span><br><span class="line">    $data[<span class="number">125</span>] = <span class="keyword">array</span>(<span class="string">&quot;name&quot;</span> =&gt; <span class="string">&quot;zhangsan&quot;</span>, <span class="string">&quot;chinese&quot;</span> =&gt; <span class="string">&quot;163&quot;</span>, <span class="string">&quot;math&quot;</span> =&gt; <span class="string">&quot;2454&quot;</span>, <span class="string">&quot;english&quot;</span> =&gt; <span class="string">&quot;222&quot;</span>);</span><br><span class="line">    $code = $_POST[<span class="string">&quot;code&quot;</span>];</span><br><span class="line">    <span class="comment">//查询数据库,在此处使用前面构建的虚拟数据代替</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="meta">&lt;?php</span></span><br><span class="line">    <span class="keyword">if</span> (array_key_exists($code, $data)) &#123;</span><br><span class="line">        $result = $data[$code]</span><br><span class="line">    <span class="meta">?&gt;</span></span><br><span class="line"></span><br><span class="line">    &lt;div&gt;</span><br><span class="line">        &lt;div&gt;<span class="meta">&lt;?php</span> <span class="keyword">echo</span> $result[<span class="string">&quot;name&quot;</span>] <span class="meta">?&gt;</span>的成绩如下&lt;/div&gt;</span><br><span class="line">        &lt;ul&gt;</span><br><span class="line">            &lt;li&gt;语文：<span class="meta">&lt;?php</span> <span class="keyword">echo</span> $result[<span class="string">&quot;chinese&quot;</span>]<span class="meta">?&gt;</span>分&lt;/li&gt;</span><br><span class="line">            &lt;li&gt;数学：<span class="meta">&lt;?php</span> <span class="keyword">echo</span> $result[<span class="string">&quot;math&quot;</span>]<span class="meta">?&gt;</span>分&lt;/li&gt;</span><br><span class="line">            &lt;li&gt;英语：<span class="meta">&lt;?php</span> <span class="keyword">echo</span> $result[<span class="string">&quot;english&quot;</span>]<span class="meta">?&gt;</span>分&lt;/li&gt;</span><br><span class="line">        &lt;/ul&gt;</span><br><span class="line">    &lt;/div&gt;</span><br><span class="line"></span><br><span class="line">    <span class="meta">&lt;?php</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="meta">?&gt;</span></span><br><span class="line">    &lt;div&gt;该学生考号不存在&lt;/div&gt;</span><br><span class="line">    <span class="meta">&lt;?php</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">?&gt;</span></span><br><span class="line"></span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ajax的4个步骤"><a href="#Ajax的4个步骤" class="headerlink" title="Ajax的4个步骤"></a>Ajax的4个步骤</h3><p><img src="http://note.youdao.com/yws/res/1499/B67657C3BC0745BFA4B686A5008745B2" alt="image"></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> btn = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#btn&quot;</span>);</span><br><span class="line">btn.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> username = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#username&quot;</span>).value;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="comment">// //1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">     <span class="comment">// let xhr = new XMLHttpRequest();</span></span><br><span class="line">     <span class="comment">// //指定发送</span></span><br><span class="line">     <span class="comment">// xhr.open(&quot;get&quot;, &quot;../php/checkUsername.php?username=&quot; + username, true);</span></span><br><span class="line">     <span class="comment">// //发送</span></span><br><span class="line">     <span class="comment">// xhr.send(null);</span></span><br><span class="line">     <span class="comment">// //发送成功需要执行的代码</span></span><br><span class="line">     <span class="comment">// xhr.onreadystatechange = function () &#123;</span></span><br><span class="line">     <span class="comment">//     let result = xhr.responseText;</span></span><br><span class="line">     <span class="comment">//     document.querySelector(&quot;#result&quot;).innerHTML = result;</span></span><br><span class="line">     <span class="comment">// &#125;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">    <span class="keyword">let</span> xhr = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">window</span>.XMLHttpRequest) &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//兼容IE6</span></span><br><span class="line">        xhr = <span class="keyword">new</span> ActiveXObject(<span class="string">&quot;Microsoft.XMLHTTP&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//对于get</span></span><br><span class="line">        <span class="comment">// //2.准备发送</span></span><br><span class="line">        <span class="comment">// xhr.open(&quot;get&quot;, &quot;../php/checkUsername.php?username=&quot; + username, true);</span></span><br><span class="line">        <span class="comment">// //3.执行发送</span></span><br><span class="line">        <span class="comment">// xhr.send(null);</span></span><br><span class="line">    <span class="comment">//对于post</span></span><br><span class="line">        <span class="comment">//2.准备发送</span></span><br><span class="line">        xhr.open(<span class="string">&quot;post&quot;</span>, <span class="string">&quot;../php/checkUsername.php&quot;</span>, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">//3.执行发送</span></span><br><span class="line">        <span class="keyword">let</span> param = <span class="string">&quot;username=&quot;</span> + username;</span><br><span class="line">        <span class="comment">//对于post请求来说，参数应该放在请求体当中。</span></span><br><span class="line">        <span class="comment">//设置xhr请求信息，只有post请求有</span></span><br><span class="line">        xhr.setRequestHeader(<span class="string">&quot;Content-type&quot;</span>, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>);</span><br><span class="line">        xhr.send(param);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//4.设置回调函数</span></span><br><span class="line">    xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status === <span class="number">200</span>) &#123;</span><br><span class="line">                <span class="keyword">let</span> result = xhr.responseText;</span><br><span class="line">                <span class="built_in">document</span>.querySelector(<span class="string">&quot;#result&quot;</span>).innerHTML = result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ajax的使用"><a href="#Ajax的使用" class="headerlink" title="Ajax的使用"></a>Ajax的使用</h3><h4 id="Ajax封装"><a href="#Ajax封装" class="headerlink" title="Ajax封装"></a>Ajax封装</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> myAjax = <span class="function">(<span class="params">type, url, param, dataType, callback, <span class="keyword">async</span></span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> xhr = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">window</span>.XMLHttpRequest) &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> ActiveXObject(<span class="string">&quot;Microsoft.XMLHTTP&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (type === <span class="string">&quot;get&quot;</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (param &amp;&amp; param !== <span class="string">&quot;&quot;</span>) &#123;</span><br><span class="line">            url += <span class="string">&quot;?&quot;</span> + param;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    xhr.open(type, url, <span class="keyword">async</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (type === <span class="string">&quot;get&quot;</span>) &#123;</span><br><span class="line">        xhr.send(<span class="literal">null</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (type === <span class="string">&quot;post&quot;</span>) &#123;</span><br><span class="line">        xhr.setRequestHeader(<span class="string">&quot;Content-Type&quot;</span>, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>);</span><br><span class="line">        xhr.send(param);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">async</span>) &#123;</span><br><span class="line">        xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">this</span>.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="built_in">this</span>.status === <span class="number">200</span>) &#123;</span><br><span class="line">                    <span class="keyword">let</span> result = <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">if</span> (dataType === <span class="string">&quot;json&quot;</span>) &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseText;</span><br><span class="line">                        result = <span class="built_in">JSON</span>.parse(result);</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (dataType === <span class="string">&quot;xml&quot;</span>) &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseXML;</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseText;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">                        callback(result);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status === <span class="number">200</span>) &#123;</span><br><span class="line">                <span class="keyword">let</span> result = <span class="literal">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (dataType === <span class="string">&quot;json&quot;</span>) &#123;</span><br><span class="line">                    result = xhr.responseText;</span><br><span class="line">                    result = <span class="built_in">JSON</span>.parse(result);</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (dataType === <span class="string">&quot;xml&quot;</span>) &#123;</span><br><span class="line">                    result = xhr.responseXML;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    result = xhr.responseText;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (callback) &#123;</span><br><span class="line">                    callback(result);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> obj = &#123;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br><span class="line"><span class="built_in">console</span>.log(obj);</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> myAjax2 = <span class="function">(<span class="params">obj</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> defaults = &#123;</span><br><span class="line">        type: <span class="string">&quot;get&quot;</span>,</span><br><span class="line">        url: <span class="string">&quot;#&quot;</span>,</span><br><span class="line">        dataType: <span class="string">&quot;json&quot;</span>,</span><br><span class="line">        data: &#123;&#125;,</span><br><span class="line">        <span class="keyword">async</span>: <span class="literal">true</span>,</span><br><span class="line">        success: <span class="function"><span class="keyword">function</span> (<span class="params">result</span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">//obj属性覆盖</span></span><br><span class="line">    <span class="comment">//1、 如果有一些属性只存在obj中， 会给defaults中增加属性</span></span><br><span class="line">    <span class="comment">//2、 如果有一些属性在obj和defaults中都存在， 会将defaults中的默认值覆盖</span></span><br><span class="line">    <span class="comment">//3、 如果有一些属性只在defaults中存在， 在obj中不存在，这时候defaults中将保留预定义的属性</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">        defaults[key] = obj[key];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> xhr = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">window</span>.XMLHttpRequest) &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> ActiveXObject(<span class="string">&quot;Microsoft.XMLHTTP&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> params = <span class="string">&quot;&quot;</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> attr <span class="keyword">in</span> defaults.data) &#123;</span><br><span class="line">        params += attr + <span class="string">&quot;=&quot;</span> + defaults.data[attr] + <span class="string">&quot;&amp;&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (params) &#123;</span><br><span class="line">        params = params.substring(<span class="number">0</span>, params.length - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (defaults.type === <span class="string">&quot;get&quot;</span>) &#123;</span><br><span class="line">        defaults.url += <span class="string">&quot;?&quot;</span> + params;</span><br><span class="line">    &#125;</span><br><span class="line">    xhr.open(defaults.type, defaults.url, defaults.async);</span><br><span class="line">    <span class="keyword">if</span> (defaults.type === <span class="string">&quot;get&quot;</span>) &#123;</span><br><span class="line">        xhr.send(<span class="literal">null</span>);</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span> (defaults.type === <span class="string">&quot;get&quot;</span>) &#123;</span><br><span class="line">        xhr.setRequestHeader(<span class="string">&quot;Content-Type&quot;</span>, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>);</span><br><span class="line">        xhr.send(params);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (defaults.async) &#123;</span><br><span class="line">        xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">this</span>.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="built_in">this</span>.status === <span class="number">200</span>) &#123;</span><br><span class="line">                    <span class="keyword">let</span> result = <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">if</span> (defaults.dataType === <span class="string">&quot;json&quot;</span>) &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseText;</span><br><span class="line">                        result = <span class="built_in">JSON</span>.parse(result);</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (defaults.dataType === <span class="string">&quot;XML&quot;</span>) &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseXML</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        result = <span class="built_in">this</span>.responseText</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    defaults.success(result);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status === <span class="number">200</span>) &#123;</span><br><span class="line">                <span class="keyword">let</span> result = <span class="literal">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (defaults.dataType === <span class="string">&quot;json&quot;</span>) &#123;</span><br><span class="line">                    result = xhr.responseText;</span><br><span class="line">                    result = <span class="built_in">JSON</span>.parse(result);</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (defaults.dataType === <span class="string">&quot;XML&quot;</span>) &#123;</span><br><span class="line">                    result = xhr.responseXML</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    result = xhr.responseText</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                defaults.success(result);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>JavaScript</category>
+      </categories>
+      <tags>
+        <tag>js</tag>
+        <tag>Ajax</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>浏览器异闻录</title>
+    <url>/2021/05/27/browser-features/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><blockquote>
+<p>开这篇文章主要是因为在开发中碰到了一个浏览器相关的比较神奇的特性，虽然无伤大雅，但想着还是要弄清楚。于是就想专门用一篇文章记录一下。之后有什么相关的关于浏览器的特性也会在这篇文章更新。如有错漏，还望指正！</p>
+</blockquote>
+<h2 id="点击事件event，人格分裂"><a href="#点击事件event，人格分裂" class="headerlink" title="点击事件event，人格分裂"></a>点击事件event，人格分裂</h2><p>最近在调试的时候发现一个问题，事件监听的时候，打印整个event。结果是</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    currentTarget: <span class="literal">null</span></span><br><span class="line">    defaultPrevented: <span class="literal">false</span></span><br><span class="line">    detail: <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>发现<code>currentTarget</code>这个属性值为空</p>
+<p>？？？</p>
+<p>满头问号，于是打印<code>event.currentTarget</code>发现这个属性是正常的</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;target&quot;</span>&gt;</span>click me<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这。。不一致，盲猜是指针的问题。于是面向Google</p>
+<p>找到这篇文章 <a href="https://stackoverflow.com/questions/26496176/console-log-event-object-shows-different-object-properties-than-it-should-have">console log event object shows different object properties than it should have</a>。</p>
+<p>总结了一下，大概就是说，在JavaScript控制台中，对于对象的打印实际上只是保存了对对象的引用，在我们点左边的小三角展开的时候浏览器就会去找这个对象展示出来。</p>
+<p>所以这里的不一致就好解释了，我们打印的时候<code>currentTarget</code>确实是存在的，但是我们点击展开在打印这之间，浏览器因为某些策略，会把这个属性置为<code>null</code>，所以，我们在打印<code>evnet.currentTarget</code>显示正常，而直接打印<code>event</code>展开却显示为<code>null</code>。</p>
+<p>文中的这个例子非常好的展现了这个特性：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> foo = &#123; &#125;;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">    foo[<span class="string">&#x27;longprefix&#x27;</span> + i] = i;</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">console</span>.log(foo);</span><br><span class="line">foo.longprefix90 = <span class="string">&#x27;abc&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+
+
+]]></content>
+      <categories>
+        <category>浏览器</category>
+      </categories>
+      <tags>
+        <tag>浏览器</tag>
+        <tag>特性</tag>
+        <tag>V8</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hexo简单部署</title>
+    <url>/2020/09/02/hexo/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h2><p>hexo是一个十分流行的搭建静态博客的框架，许多软件工程师使用它来搭建自己的博客，今天我就来说一说使用它的心得体会  </p>
+<p>首先，一定要去hexo的官方网站去读一读<a href="https://hexo.io/zh-cn/docs/">官方文档</a>。绝大多数问题都能在这里找到答案</p>
+<h2 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h2><h3 id="建立Github库"><a href="#建立Github库" class="headerlink" title="建立Github库"></a>建立Github库</h3><p>首先,在你的github上新建一个库，这个库的名称一定要符合命名规范<code>&lt;YourMame&gt;.github.io</code></p>
+<h3 id="建立本地仓库"><a href="#建立本地仓库" class="headerlink" title="建立本地仓库"></a>建立本地仓库</h3><p>建立一个本地文件夹，用来存放你的博客项目，名字随你的喜好</p>
+<h3 id="安装hexo"><a href="#安装hexo" class="headerlink" title="安装hexo"></a>安装hexo</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install hexo -g #安装  </span><br><span class="line">npm update hexo -g #升级  </span><br></pre></td></tr></table></figure>
+
+<h3 id="初始化hexo"><a href="#初始化hexo" class="headerlink" title="初始化hexo"></a>初始化hexo</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo init #初始化</span><br><span class="line">hexo generate #生成</span><br><span class="line">hexo server #启动服务预览</span><br></pre></td></tr></table></figure>
+<p>然后，打开浏览器，在地址栏输入<a href="http://localhost:4000/%E5%B0%B1%E5%8F%AF%E4%BB%A5%E7%9C%8B%E5%88%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E5%8D%9A%E5%AE%A2%E7%95%8C%E9%9D%A2%E4%BA%86">http://localhost:4000/就可以看到一个简单的博客界面了</a></p>
+<h2 id="项目的目录结构"><a href="#项目的目录结构" class="headerlink" title="项目的目录结构"></a>项目的目录结构</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">.</span><br><span class="line">├── public //打包后的资源文件</span><br><span class="line">├── scaffolds //基本md配置</span><br><span class="line">├── source //主要存放你要展示的文章，和一些页面的配置</span><br><span class="line">│   ├── _posts // </span><br><span class="line">│   │   └── img</span><br><span class="line">│   │       └── Fetch</span><br><span class="line">│   ├── about //关于页面</span><br><span class="line">│   ├── categories //分类页面</span><br><span class="line">│   ├── images //主要存放文档中的图片</span><br><span class="line">│   ├── search //搜索控件</span><br><span class="line">│   └── tags //标签页面</span><br><span class="line">├── themes //存放下载的主题</span><br><span class="line">├── _config.yml //配置文件，非常重要！！！具体参见官方文档</span><br><span class="line">├── db.json</span><br><span class="line">├── package-lock.json</span><br><span class="line">├── package.json</span><br><span class="line">└── yarn.lock</span><br></pre></td></tr></table></figure>
+
+<h2 id="一定要配置的东西"><a href="#一定要配置的东西" class="headerlink" title="一定要配置的东西"></a>一定要配置的东西</h2><figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 配置和远端仓库的链接</span></span><br><span class="line"><span class="comment">## Docs: https://hexo.io/docs/one-command-deployment</span></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/myjdml/myjdml.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">maste</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 搜索配置文件</span></span><br><span class="line"><span class="attr">search:</span></span><br><span class="line">  <span class="attr">path:</span> <span class="string">search.xml</span></span><br><span class="line">  <span class="attr">field:</span> <span class="string">post</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">html</span></span><br><span class="line">  <span class="attr">limit:</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="向远端仓库提交"><a href="#向远端仓库提交" class="headerlink" title="向远端仓库提交"></a>向远端仓库提交</h2><ol>
+<li>git初始化</li>
+<li>执行<code>hexo deploy</code>(若未成功，查看git是否初始化。注意一定要把主题里的<code>.git</code>文件夹删了。)</li>
+</ol>
+<h2 id="主题美化"><a href="#主题美化" class="headerlink" title="主题美化"></a>主题美化</h2><p>好了，到现在，一个简单的博客已经搭建完成了。接下来，你会发现一个问题，那就是原生的主题实在是太丑了！！！所以，我们需要下载使用你喜欢的主题</p>
+<ol>
+<li><p>下载主题</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/Fechin/hexo-theme-diaspora.git themes/diaspora</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启用主题</p>
+</li>
+</ol>
+<p>启用主题需要修改_config.yml中的一些配置</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Extensions</span></span><br><span class="line"><span class="comment">## Plugins: https://hexo.io/plugins/</span></span><br><span class="line"><span class="comment">## Themes: https://hexo.io/themes/</span></span><br><span class="line"><span class="attr">theme:</span> <span class="string">diaspora</span> <span class="comment"># 这里填上你想要使用的主题名</span></span><br></pre></td></tr></table></figure>
+
+<p>然后看一看主题的文档，添加一些自己喜欢的配置就可以了！</p>
+<h2 id="补充说明"><a href="#补充说明" class="headerlink" title="补充说明"></a>补充说明</h2><ul>
+<li>如果使用gitee的pages的话，尽量使用https。http有几率出现页面无法完全部署的情况。</li>
+<li>如果发现gitee数据没有更新的情况的话，需要在pages里进行手动更新。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>JavaScript</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git在前端项目中的一些使用</title>
+    <url>/2020/10/04/git-learning/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="Git链接远程仓库"><a href="#Git链接远程仓库" class="headerlink" title="Git链接远程仓库"></a>Git链接远程仓库</h2><p>当我们创建了一个项目的时候。首先我们应该把本地的Git仓库和远端的Git仓库连接起来。  </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote add origin git@github.com:michaelliao/learngit.git</span></span><br></pre></td></tr></table></figure>
+<p>我们可以使用下面的这个命令查看连接的远程仓库</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote -v</span></span><br></pre></td></tr></table></figure>
+<p>接着，我们就可以向远程仓库提交内容了</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push -u origin master</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>第一次提交的时候，需要加上<code>-u</code>参数，它不仅会把本地的master仓库推送到远程的master仓库，而且会把两者关联起来。这样的话在以后的提交中就可以简化命令，不用携带<code>-u</code>参数  </p>
+</blockquote>
+<p>同时，当你连接了远程仓库之后，你就可以随时使用<code>git pull</code>来拉取你远程仓库里的代码。</p>
+<h2 id="一次命令push多个远程仓库"><a href="#一次命令push多个远程仓库" class="headerlink" title="一次命令push多个远程仓库"></a>一次命令push多个远程仓库</h2><p>git支持绑定多个push的远程地址，所以我们可以添加多个地址，可以做到一行代码，同时提交到多个仓库。  </p>
+<p>使用如下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote <span class="built_in">set</span>-url --add github &lt;你的仓库地址&gt;</span></span><br></pre></td></tr></table></figure>
+<p>也可以直接修改配置文件进行添加：</p>
+<blockquote>
+<p>打开 .git/config 找到 [remote “github”]，添加对应的 url 即可</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[remote &quot;github&quot;]</span><br><span class="line">    url = https://github.com/zxbetter/test.git</span><br><span class="line">    fetch = +refs/heads/*:refs/remotes/github/*</span><br><span class="line">    url = https://git.oschina.net/zxbetter/test.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建新分支"><a href="#创建新分支" class="headerlink" title="创建新分支"></a>创建新分支</h2><p>首先，我们创建dev分支，并且切换到dev分支</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -b dev</span></span><br></pre></td></tr></table></figure>
+<p>当然，使用<code>-b</code>参数是简化命令，通过下面的两条命令也可以达到一样的效果：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch dev</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git checkout dev</span></span><br></pre></td></tr></table></figure>
+<p>然后，你可以使用<code>git branch</code>查看当前的分支<br>这一切做好之后，我们就可以使用<code>git checkout &lt;分支名&gt;</code>在不同的分支之间进行任意的切换</p>
+<h2 id="合并分支"><a href="#合并分支" class="headerlink" title="合并分支"></a>合并分支</h2><p>合并分支非常的简单，只需要一行命令即可</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git merge dev</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="comment"># 将dev分支的内容合并到当前分支上</span></span></span><br></pre></td></tr></table></figure>
+<p>但是，这行命令并不是所有时候都会顺利的被执行。如果两个分支的同一文件差异较大，则会产生冲突，这个时候就需要打开产生冲突的文件进行手动的修复。</p>
+<h2 id="commit的一些规范"><a href="#commit的一些规范" class="headerlink" title="commit的一些规范"></a>commit的一些规范</h2><h3 id="一些常规的commit规范"><a href="#一些常规的commit规范" class="headerlink" title="一些常规的commit规范"></a>一些常规的commit规范</h3><ul>
+<li>type: commit 的类型</li>
+<li>feat: 新特性</li>
+<li>fix: 修改问题</li>
+<li>refactor: 代码重构</li>
+<li>docs: 文档修改</li>
+<li>style: 代码格式修改, 注意不是 css 修改</li>
+<li>test: 测试用例修改</li>
+<li>chore: 其他修改, 比如构建流程, 依赖管理.</li>
+<li>scope: commit 影响的范围, 比如: route, component, utils, build…</li>
+<li>subject: commit 的概述, 建议符合  50/72 formatting</li>
+<li>body: commit 具体修改内容, 可以分为多行, 建议符合 50/72 formatting</li>
+<li>footer: 一些备注, 通常是 BREAKING CHANGE 或修复的 bug 的链接.</li>
+</ul>
+<h3 id="Commitizen-替代你的-git-commit"><a href="#Commitizen-替代你的-git-commit" class="headerlink" title="Commitizen: 替代你的 git commit"></a>Commitizen: 替代你的 git commit</h3><p>这是一个特别神奇的工具，可以帮助我们实现git commit规范，使用了这个插件，我们就可以使用<code>git cz</code>命令来代替<code>git commit</code>来提交规范。  </p>
+<h3 id="全局安装"><a href="#全局安装" class="headerlink" title="全局安装"></a>全局安装</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install -g commitizen cz-conventional-changelog</span><br><span class="line">echo &#x27;&#123; &quot;path&quot;: &quot;cz-conventional-changelog&quot; &#125;&#x27; &gt; ~/.czrc</span><br><span class="line"><span class="meta">#</span><span class="bash"> 全局模式下, 需要 ~/.czrc 配置文件, 为 commitizen 指定 Adapter.</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="在项目里安装"><a href="#在项目里安装" class="headerlink" title="在项目里安装"></a>在项目里安装</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install -D commitizen cz-conventional-changelog</span><br></pre></td></tr></table></figure>
+<p>package.json中的配置</p>
+<figure class="highlight"><table><tr><td class="code"><pre><span class="line">&quot;script&quot;: &#123;</span><br><span class="line">    ...,</span><br><span class="line">    &quot;commit&quot;: &quot;git-cz&quot;,</span><br><span class="line">&#125;,</span><br><span class="line">&quot;config&quot;: &#123;</span><br><span class="line">    &quot;commitizen&quot;: &#123;</span><br><span class="line">        &quot;path&quot;: &quot;node_modules/cz-conventional-changelog&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果全局安装过 commitizen, 那么在对应的项目中执行 git cz or npm run commit 都可以.</p>
+<p>效果如下:<br><img src="https://user-gold-cdn.xitu.io/2018/5/16/16369a14ec8704fc?imageslim" alt="img"></p>
+<h2 id="杂记"><a href="#杂记" class="headerlink" title="杂记"></a>杂记</h2><ul>
+<li>当我们发现每次push的时候都要输入git的帐号和密码时，但我们又不想用ssh连接。这个时候我们就可以尝试去使用这么一行命令<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global credential.helper store</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这行命令产生的作用只有一个，就是在本地全局建立一个文本，在你每次输入帐号和密码的时候记录当前的帐号和密码。这样的话，只需要输入一次帐号和密码，之后push的时候就都不需要输入了！</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="Ref"><a href="#Ref" class="headerlink" title="Ref"></a>Ref</h2><p><a href="https://www.liaoxuefeng.com/wiki/896043488029600/898732864121440">廖雪峰的官方网站</a><br><a href="https://juejin.im/post/6844903606815064077">优雅的提交你的 Git Commit Message</a></p>
+]]></content>
+      <categories>
+        <category>项目规范</category>
+      </categories>
+      <tags>
+        <tag>前端</tag>
+        <tag>git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>图片加载的一些说明</title>
+    <url>/2020/09/06/img-loading/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="图片访问403-Forbidden的问题"><a href="#图片访问403-Forbidden的问题" class="headerlink" title="图片访问403 Forbidden的问题"></a>图片访问403 Forbidden的问题</h2><p>最近碰到了这么一个问题，一张图片，直接在浏览器里是可以打来的。但是通过<code>&lt;img /&gt;</code>标签加载就会出现无法访问的情况，并且返回403 Forbidden。于是上网搜索了一下，原来这是由于服务器设置了防盗链的原因。  </p>
+<p>那么要如何解决呢？目前来说，有两种方法。</p>
+<h3 id="1-设置images-weserv-nl"><a href="#1-设置images-weserv-nl" class="headerlink" title="1.设置images.weserv.nl"></a>1.设置<code>images.weserv.nl</code></h3><p>这个方法的核心原理就是处理原图片的地址，将原图片缓存，然后使用一种不受限制的路径去访问它</p>
+<blockquote>
+<p>这是yatessss大佬在vue完成知乎日报web版的解决方案</p>
+</blockquote>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">getImage(url)&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(url);</span><br><span class="line">	<span class="comment">// 把现在的图片连接传进来，返回一个不受限制的路径</span></span><br><span class="line">	<span class="keyword">if</span>(url !== <span class="literal">undefined</span>)&#123;</span><br><span class="line">		<span class="keyword">return</span> url.replace(<span class="regexp">/^(http)[s]*(\:\/\/)/</span>,<span class="string">&#x27;https://images.weserv.nl/?url=&#x27;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>把图片路径直接传进去,替换一下原来url的<code>http/https</code>。或者直接在图片url前加上<code>https://images.weserv.nl/?url=</code></p>
+<h3 id="2-使用no-erferrer"><a href="#2-使用no-erferrer" class="headerlink" title="2.使用no-erferrer"></a>2.使用<code>no-erferrer</code></h3><p>这个方法的核心原理是从源头入手，解决防盗链问题。  </p>
+<p>它仅仅需要在index.html的头部添加一个<code>&lt;meta /&gt;</code>标签。内容如下：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;referrer&quot;</span> <span class="attr">content</span>=<span class="string">&quot;no-referrer&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这种方法的原理其实就是阻断事件源的发生。因为我们都知道，图片防盗链的原理是服务端检查头部的referrer字段。原来是浏览器会自动给服务端发送这个请求。如果添加了这行代码的话，那么浏览器就不会发送这个请求。那么服务端自然不能判断出这个请求是否同源。  </p>
+<p><strong>但是！！！</strong>  </p>
+<p>如果你配置了类似于百度统计的功能。那么你就不能使用这个方法。因为像百度统计类似的统计网站是根据<code>referrer</code>进行统计的</p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><ul>
+<li><a href="https://blog.csdn.net/tiantang_1986/article/details/83748782">访问图片出现403的解决办法</a></li>
+<li><a href="https://juejin.im/post/6844903832040767496">解决图片访问403 Forbidden问题</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>踩坑</category>
+      </categories>
+      <tags>
+        <tag>js</tag>
+        <tag>http</tag>
+        <tag>兼容性</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Fetch笔记</title>
+    <url>/2020/09/02/fetch/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="关于AJAX的一些回顾"><a href="#关于AJAX的一些回顾" class="headerlink" title="关于AJAX的一些回顾"></a>关于AJAX的一些回顾</h2><p><img src="/images/Fetch/ajax.jpg" alt="ajax"></p>
+<p>基本步骤：  </p>
+<p>进行Ajax请求相信大家一定不陌生，这里我们一起回顾一下，ajax请求是什么样的！</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> btn = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#btn&quot;</span>);</span><br><span class="line">btn.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> username = <span class="built_in">document</span>.querySelector(<span class="string">&quot;#username&quot;</span>).value;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="comment">// //1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">     <span class="comment">// let xhr = new XMLHttpRequest();</span></span><br><span class="line">     <span class="comment">// //指定发送</span></span><br><span class="line">     <span class="comment">// xhr.open(&quot;get&quot;, &quot;../php/checkUsername.php?username=&quot; + username, true);</span></span><br><span class="line">     <span class="comment">// //发送</span></span><br><span class="line">     <span class="comment">// xhr.send(null);</span></span><br><span class="line">     <span class="comment">// //发送成功需要执行的代码</span></span><br><span class="line">     <span class="comment">// xhr.onreadystatechange = function () &#123;</span></span><br><span class="line">     <span class="comment">//     let result = xhr.responseText;</span></span><br><span class="line">     <span class="comment">//     document.querySelector(&quot;#result&quot;).innerHTML = result;</span></span><br><span class="line">     <span class="comment">// &#125;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//1.创建一个新的XMLHttpRequest对象</span></span><br><span class="line">    <span class="keyword">let</span> xhr = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">window</span>.XMLHttpRequest) &#123;</span><br><span class="line">        xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//兼容IE6</span></span><br><span class="line">        xhr = <span class="keyword">new</span> ActiveXObject(<span class="string">&quot;Microsoft.XMLHTTP&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//对于get</span></span><br><span class="line">        <span class="comment">//2.准备发送</span></span><br><span class="line">        xhr.open(<span class="string">&quot;get&quot;</span>, <span class="string">&quot;../php/checkUsername.php?username=&quot;</span> + username, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">//3.执行发送</span></span><br><span class="line">        xhr.send(<span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//对于post</span></span><br><span class="line">        <span class="comment">//2.准备发送</span></span><br><span class="line">        xhr.open(<span class="string">&quot;post&quot;</span>, <span class="string">&quot;../php/checkUsername.php&quot;</span>, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">//3.执行发送</span></span><br><span class="line">        <span class="keyword">let</span> param = <span class="string">&quot;username=&quot;</span> + username;</span><br><span class="line">        <span class="comment">//对于post请求来说，参数应该放在请求体当中。</span></span><br><span class="line">        <span class="comment">//设置xhr请求信息，只有post请求有</span></span><br><span class="line">        xhr.setRequestHeader(<span class="string">&quot;Content-type&quot;</span>, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>);</span><br><span class="line">        xhr.send(param);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//4.设置回调函数</span></span><br><span class="line">    xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status === <span class="number">200</span>) &#123;</span><br><span class="line">                <span class="keyword">let</span> result = xhr.responseText;</span><br><span class="line">                <span class="built_in">document</span>.querySelector(<span class="string">&quot;#result&quot;</span>).innerHTML = result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Fetch-Fetch-Fetch！！！"><a href="#Fetch-Fetch-Fetch！！！" class="headerlink" title="Fetch Fetch Fetch！！！"></a>Fetch Fetch Fetch！！！</h2><p>当我们使用javascript去发送和接收一些信息的时候，我们会发起一个叫做ajax请求的东西。ajax是一种技术，当我们需要发送和接收信息时，信息返回回来，我们需要改变HTML，将它添加到页面中。这个时候浏览器往往需要重新渲染。而我们如果使用了ajax技术的话，浏览器不需要去重新刷新页面，而是只改变需要更新的部分，让页面局部刷新。  </p>
+<p>由于原生的js代码实现ajax十分的繁琐，并且有各种适配的问题，所以Jquery封装库实现ajax横空出世，在当时成为了一股潮流。它只需要引入Jquery文件，进行一些简单的配置，就可以实现ajax异步请求。  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">$.ajax(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  success: <span class="function">(<span class="params">data</span>) =&gt;</span> &#123; <span class="comment">/* do something with the data */</span> &#125;,</span><br><span class="line">  error: <span class="function">(<span class="params">err</span>) =&gt;</span> &#123; <span class="comment">/* do something when an error happens */</span>&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Fetch的支持"><a href="#Fetch的支持" class="headerlink" title="Fetch的支持"></a>Fetch的支持</h3><p><img src="/images/Fetch/brower.png" alt="image"></p>
+<p>Fetch的支持性非常好，支持几乎所有的主流浏览器（老版的IE和迷你版的欧朋除外）。而且因为Fetch是原生的方法，所以它在项目中使用十分的安全。如果你需要使用一些方法，原生不支持。这里有一些<a href="https://github.com/github/fetch">补充</a>  </p>
+<h3 id="使用Fetch获取数据"><a href="#使用Fetch获取数据" class="headerlink" title="使用Fetch获取数据"></a>使用Fetch获取数据</h3><p>使用Fetch获取数据很容易，只需要知道资源地址就可以  </p>
+<p>例如我想获取到Chris的仓库的数据，我只需要发送一个get请求给<code>api.github.com/users/chriscoyier/repos</code>  </p>
+<p>这样就是一个fetch请求：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这是不是很简单！！！  </p>
+<p>接下来Fetch返回的是一个Promise对象，这是一个不需要回调函数就可以操作异步方法的对象。  </p>
+<p>获取到数据之后，我们将我们需要进行的一些操作放在<code>.then</code>方法里  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;<span class="comment">/* do something */</span>&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>如果你是第一次使用fetch，你会对它返回的response十分惊喜。如果你使用<code>console.log(response)</code>，你将得到下面这些信息</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">false</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok : <span class="literal">true</span></span><br><span class="line">  redirected : <span class="literal">false</span></span><br><span class="line">  status : <span class="number">200</span></span><br><span class="line">  statusText : <span class="string">&quot;OK&quot;</span></span><br><span class="line">  type : <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url : <span class="string">&quot;http://some-website.com/some-url&quot;</span></span><br><span class="line">  __proto__ : Response</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里，你会看到fetch会返回给你一些参数，这些参数会告诉你请求的状态。你会看到请求成功（ok: true; status: 200）。但是你也许注意到了, 在这些参数中你看不到任何你请求成功的数据！！  </p>
+<p>事实就是如此，我们从GitHub获取的数据隐藏在body的可读文档流中。我们需要一个合适的方法去转换这些文档流，让它们变成我们可以使用的数据。<br>我们知道GitHub返回的是一串json数据，我们可以使用<code>response.json</code>来转换这些数据。  </p>
+<p>这里有一些其他的方法去处理不同类型的数据。如果返回的数据是XML格式的。可以用<code>response.text</code>进行数据转换；如果返回的数据是图片。可以用<code>response.blob</code>  </p>
+<p>所有的这些转换方法（<code>response.json</code> 或者其他所有的）返回的都是另一个Promise对象，我们可以再用一个<code>.then</code>方法来获取这些数据。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chriscoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> response.json())</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// Here&#x27;s a list of repos!</span></span><br><span class="line">    <span class="built_in">console</span>.log(data)</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>OK!!这就是一个完整的用fetch进行异步操作的代码了。简短且简单🧲</p>
+<h3 id="用Fetch发送数据"><a href="#用Fetch发送数据" class="headerlink" title="用Fetch发送数据"></a>用Fetch发送数据</h3><p>使用fetch发送消息是十分优雅的，你可以只需要配置一下配置项就可以使用。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, options);</span><br></pre></td></tr></table></figure>
+
+<p>第一个参数，你需要设置你提交请求的方式。如果你没有设置，fetch会自动将设置为get  </p>
+<p>第二个参数，设置你的请求头。在现在这个时间段，我们主要用的是json数据。所以我们就设置<code>content-Type</code>为<code>application/json</code>  </p>
+<p>第三个参数，设置的是body里的json数据处理。我们使用json数据的时候通常要进行一些处理。所以我们通常会设置<code>JSON.stringify</code>  </p>
+<p>下面是一个post请求的实例：  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> content = &#123;<span class="attr">some</span>: <span class="string">&#x27;content&#x27;</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The actual fetch request</span></span><br><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  headers: &#123;</span><br><span class="line">    <span class="string">&#x27;Content-Type&#x27;</span>: <span class="string">&#x27;application/json&#x27;</span></span><br><span class="line">  &#125;,</span><br><span class="line">  body: <span class="built_in">JSON</span>.stringify(content)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// .then()...</span></span><br></pre></td></tr></table></figure>
+
+<p>如果你的眼光足够敏锐，你就会发现有一些模版代码对于很多<code>post</code>,<code>put</code>和<code>delete</code>请求都适用。当我们已经明确了我们会发送json数据的时候，我们可以重复的将头部设置为<code>JSON.stringify</code>  </p>
+<p>但是即使我们使用模板代码，fetch依然可以把异步请求实现的很好。  </p>
+<p>然而当使用fetch的时候处理错误信息的时候，并没有像处理成功信息这么容易。。。  </p>
+<h3 id="使用fetch处理错误信息"><a href="#使用fetch处理错误信息" class="headerlink" title="使用fetch处理错误信息"></a>使用fetch处理错误信息</h3><p>尽管我们一直希望ajax请求能成功，但是有时候它总是会失败的。一旦失败，有很多种可能性导致fetch请求失败。包括并不限于以下这几点：  </p>
+<ol>
+<li>你尝试去请求一个不存在的资源。</li>
+<li>你没有权限去获取资源。</li>
+<li>你设置的一些的请求参数错误。</li>
+<li>服务器抛出错误。</li>
+<li>服务器请求超时。</li>
+<li>服务器宕机。</li>
+<li>后台的API改变</li>
+<li>。。。</li>
+</ol>
+<p>如果你的请求失败了，那么就大事不妙了！！你可以想象这样的一种情景，你正在进行网上购物。这时，一个错误产生了，但是设计这个网站的人并没有设计处理请求错误的函数。因此，在你点击购买之后，一切都静止了，什么变化都没有发生。那个页面就挂在那儿，你不知道发生了什么，不知道你是否购买成功了。  </p>
+<p>现在，让我们去尝试获取一个不存在的资源来学习来学习如何在使用Fetch的时候处理错误。举个例子，我们错误的把<code>chriscoyier</code>拼写成了<code>chrissycoyier</code>。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Fetching chrissycoyier&#x27;s repos instead of chriscoyier&#x27;s repos</span></span><br><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>我们知道这个请求会产生错误，因为在GitHub上是没有<code>chrissycoyier</code>的。因为错误是promise对象返回的，我们使用<code>catch</code>去处理它。  </p>
+<p>在不知道具体的处理方法之前，你可能会写出这样一段代码。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> response.json())</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;data is&#x27;</span>, data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;error is&#x27;</span>, error));</span><br></pre></td></tr></table></figure>
+
+<p>然后触发你的fetch请求，你将会得到这样的一个结果：</p>
+<p><img src="/images/Fetch/error1.png" alt="image"></p>
+<blockquote>
+<p>Fetch failed, but the code that gets executed is the second <code>.then</code> instead of <code>.catch</code></p>
+</blockquote>
+<p>为什么第二个<code>.then</code>方法会调用执行？为什么promise不想我们所期望的那样使用<code>.catch</code>去捕获错误。太恐怖了！！！😱😱😱  </p>
+<p>如果我们使用<code>console.log</code>去执行响应回来的数据。我们会看到一些不同的值  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">true</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok: <span class="literal">false</span> <span class="comment">// Response is not ok</span></span><br><span class="line">  redirected: <span class="literal">false</span></span><br><span class="line">  status: <span class="number">404</span> <span class="comment">// HTTP status is 404.</span></span><br><span class="line">  statusText: <span class="string">&quot;Not Found&quot;</span> <span class="comment">// Request not found</span></span><br><span class="line">  type: <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url: <span class="string">&quot;https://api.github.com/users/chrissycoyier/repos&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这些数据大部分都是正常的，比如<code>ok</code>,<code>status</code>和<code>statusText</code>。并且，如同我们所预料是我一样，我们并没有在这其中发现chrissycoyier在GitHub上的数据。  </p>
+<p>这个例子充分告诉了我们一件十分重要的事情，Fetch并不会关注你的ajax是否成功。它只关注发送请求，并且从从服务器收到响应。这意味着当请求失败时，我们需要自己抛出错误。  </p>
+<p>因此，在第一个<code>.then</code>请求中，只有当请求成功时，才应该对返回的数据进行处理。验证请求是否成功其实很简单，只需要判断<code>response</code>是否为<code>ok</code>就可以了。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// Find some way to get to execute .catch()</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>当我们知道我们的请求并没有成功时，我们可以通过<code>throw</code>抛出一个错误，或者使用Promise中的<code>reject</code>去激活<code>catch</code>方法。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// throwing an Error</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// rejecting a Promise</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上的两种方式，使用任意一种就可以了。因为这两种方式都可以激活<code>.catch</code>方法  </p>
+<p>在这里，我选择去使用<code>Promise.reject</code>,因为它更容易去执行。<code>Errors</code>也很好，但是它的执行比较困难，它唯一的好处是它在堆栈跟踪方面有着得天独厚的优势，但再Fetch方法中我们并不需要这种特质。  </p>
+<p>所以，代码就变成了这样： </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;https://api.github.com/users/chrissycoyier/repos&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="string">&#x27;something went wrong!&#x27;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;data is&#x27;</span>, data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(<span class="string">&#x27;error is&#x27;</span>, error));</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/eFetch/error2.png" alt="image"></p>
+<blockquote>
+<p>Failed request, but error gets passed into catch correctly</p>
+</blockquote>
+<p>太好了！！现在我们有办法去捕获错误了。  </p>
+<p>但是我们这样处理错误信息返回一个普通的文本并不是特别的友好。我们并不知道究竟是什么地方出问题了。我十分确信再遇到错误时收到这样一个错误信息你并不会感到十分愉快。。。</p>
+<p><img src="/images/Fetch/error3.png" alt="image"></p>
+<blockquote>
+<p>Yeah… I get it that something went wrong… but what exactly? 🙁</p>
+</blockquote>
+<p>到底是什么错了？是服务器超时了吗？是我的连接被切断了吗？我们没有方法去得知！我们需要一种方法能告诉我们请求发生了什么错误，然后我们就可以很方便的处理它。  </p>
+<p>让我们再来看一看返回的信息，看能不能找到什么灵感</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  body: ReadableStream</span><br><span class="line">  bodyUsed: <span class="literal">true</span></span><br><span class="line">  headers: Headers</span><br><span class="line">  ok: <span class="literal">false</span> <span class="comment">// Response is not ok</span></span><br><span class="line">  redirected: <span class="literal">false</span></span><br><span class="line">  status: <span class="number">404</span> <span class="comment">// HTTP status is 404.</span></span><br><span class="line">  statusText: <span class="string">&quot;Not Found&quot;</span> <span class="comment">// Request not found</span></span><br><span class="line">  type: <span class="string">&quot;cors&quot;</span></span><br><span class="line">  url: <span class="string">&quot;https://api.github.com/users/chrissycoyier/repos&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>oh,太好了！在这个案例中，错误的原因是我们请求的资源不存在。我们可以返回一个404状态码。这样我们就知道该做什么了。  </p>
+<p>将<code>status</code>和<code>statusText</code>放入<code>.catch</code>方法中，我们可以使用<code>.reject</code>来做这件事:  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">      <span class="keyword">return</span> response.json()</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(&#123;</span><br><span class="line">        status: response.status,</span><br><span class="line">        statusText: response.statusText</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (error.status === <span class="number">404</span>) &#123;</span><br><span class="line">      <span class="comment">// do something about 404</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br></pre></td></tr></table></figure>
+
+<p>好！现在想对于之前已经有了很大的进展了！   </p>
+<p>这种错误处理方式对于不需要特定解释的那些确定的HTTP状态是已经完全足够了的，像：</p>
+<ul>
+<li>401: Unauthorized</li>
+<li>404: Not found</li>
+<li>408: Connection timeout</li>
+</ul>
+<p>但是它对于这一种情况就会显得特别不友好：</p>
+<ul>
+<li>400: Bad request.</li>
+</ul>
+<p>是什么造成了一个错误的请求？太多的可能性了！例如，如果你丢失了一些必要的参数，会返回400。</p>
+<p><img src="/images/Fetch/error4.png" alt="image"></p>
+<blockquote>
+<p>Stripe’s explains it returns a 400 error if the request is missing a required field</p>
+</blockquote>
+<p>如果我们只像之前一样处理的话，那么只会返回一个400错误。我们就不知道究竟发生了什么。我们需要更多的信息来告诉我们，究竟缺少了什么？是用户忘记填写了姓名？邮箱？还是信用卡信息？我们并不知道。  </p>
+<p>理想的来说，这种情况下服务器应该返回一个对象，告诉我们请求为什么会失败。如果你的后台使用的是node和express，你可能会这么写。  </p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">res.status(<span class="number">400</span>).send(&#123;</span><br><span class="line">  err: <span class="string">&#x27;no first name&#x27;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们不能再第一个<code>.then</code>方法里使用reject,因为我们只能在执行了<code>response.json</code>之后才能读取服务器抛出的错误，然后我们才能决定我们做些什么。  </p>
+<p>就像下面这些代码：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-error&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResponse</span>(<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.json()</span><br><span class="line">    .then(<span class="function"><span class="params">json</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(json)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>让我们剖析一下这一坨代码究竟在干啥！首先我们使用<code>response.json</code>来读取服务器返回给我们的json数据。因为<code>response.json</code>返回的是一个json对象，所以我们可以立即使用<code>.then</code>方法去读取这个数据究竟是啥。  </p>
+<p>我们在第一个<code>.then</code>方法里包含着第二个<code>.then</code>方法因为我们需要去判断<code>response.ok</code>是否为真，从而判断响应是否成功  </p>
+<p>如果你想将 status和statusText和json一起发送给<code>.catch</code>,你可以使用<code>Object.assign()</code>将它们联合在一起。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> error = <span class="built_in">Object</span>.assign(&#123;&#125;, json, &#123;</span><br><span class="line">  status: response.status,</span><br><span class="line">  statusText: response.statusText</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">return</span> <span class="built_in">Promise</span>.reject(error)</span><br></pre></td></tr></table></figure>
+
+<p>使用新的<code>handelResponse</code>函数，你可以这样书写代码。这种方式可以自动将数据发送给<code>.then</code>和<code>.catch</code></p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(error))</span><br></pre></td></tr></table></figure>
+
+<p>这是我们十分高兴，因为我们折腾了老半天，终于完成了对错误的处理。但是当我们坐下来，喝着咖啡，享受着这惬意的下午茶的时候。我们突然意识到。。。我们似乎还没有对响应数据做处理！！！</p>
+<h3 id="处理其他响应类型"><a href="#处理其他响应类型" class="headerlink" title="处理其他响应类型"></a>处理其他响应类型</h3><p>到目前为止，我们只处理了Fetch的json数据请求。这在当今90%的API都返回json数据的情况下解决了大部分的问题。  </p>
+<p>但是，另外的10%怎么办。。。  </p>
+<p>假如你使用上面的代码去接受XML的响应，你将立即捕获一个错误：</p>
+<p><img src="/images/Fetch/failed-text-response.png" alt="image"></p>
+<blockquote>
+<p>Parsing an invalid JSON produces a Syntax error</p>
+</blockquote>
+<p>因为返回的是一串xml数据，而非json数据。最简单的，我们不能返回<code>response.json</code>, 取而代之的是<code>response.text</code>。想要这么做的话，我们需要检查请求头里的 content type</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">.then(<span class="function"><span class="params">response</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> contentType = response.headers.get(<span class="string">&#x27;content-type&#x27;</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;application/json&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> response.json()</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;text/html&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> response.text()</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Handle other responses accordingly...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面是之前所有代码的一个合集：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>)</span><br><span class="line">  .then(handleResponse)</span><br><span class="line">  .then(<span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">console</span>.log(data))</span><br><span class="line">  .catch(<span class="function"><span class="params">error</span> =&gt;</span> <span class="built_in">console</span>.log(error))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> contentType = response.headers.get(<span class="string">&#x27;content-type&#x27;</span>)</span><br><span class="line">  <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;application/json&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> handleJSONResponse(response)</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (contentType.includes(<span class="string">&#x27;text/html&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> handleTextResponse(response)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Other response types as necessary. I haven&#x27;t found a need for them yet though.</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">`Sorry, content-type <span class="subst">$&#123;contentType&#125;</span> not supported`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleJSONResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.json()</span><br><span class="line">    .then(<span class="function"><span class="params">json</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(<span class="built_in">Object</span>.assign(&#123;&#125;, json, &#123;</span><br><span class="line">          status: response.status,</span><br><span class="line">          statusText: response.statusText</span><br><span class="line">        &#125;))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">handleTextResponse</span> (<span class="params">response</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> response.text()</span><br><span class="line">    .then(<span class="function"><span class="params">text</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (response.ok) &#123;</span><br><span class="line">        <span class="keyword">return</span> json</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(&#123;</span><br><span class="line">          status: response.status,</span><br><span class="line">          statusText: response.statusText,</span><br><span class="line">          err: text</span><br><span class="line">        &#125;)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果你决定使用Fetch，那么你将会经常使用到<code>control</code>+<code>c</code>/<code>v</code>。如果需要在项目中大量使用Fetch的话，下面介绍了一个Fetch的库–zIFetch.</p>
+<h3 id="介绍-zIFetch"><a href="#介绍-zIFetch" class="headerlink" title="介绍 zIFetch"></a>介绍 zIFetch</h3><p>zIFetch是一个抽象了数据处理函数的库，它让你只需要关心数据和错误处理而不需要担心响应。</p>
+<p>使用zlFetch，首先你可以这么安装它。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install zl-fetch --save</span><br></pre></td></tr></table></figure>
+
+<p>然后，你可以在库里引用它。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Polyfills (if needed)</span></span><br><span class="line"><span class="built_in">require</span>(<span class="string">&#x27;isomorphic-fetch&#x27;</span>) <span class="comment">// or whatwg-fetch or node-fetch if you prefer</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ES6 Imports</span></span><br><span class="line"><span class="keyword">import</span> zlFetch <span class="keyword">from</span> <span class="string">&#x27;zl-fetch&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// CommonJS Imports</span></span><br><span class="line"><span class="keyword">const</span> zlFetch = <span class="built_in">require</span>(<span class="string">&#x27;zl-fetch&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>zIFetch不仅仅可以移除处理Fetch响应数据的需要。它还可以帮你发送数据而不需要在body里对数据进行转换</p>
+<p>下面的这些代码就是一个例子：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> content = &#123;<span class="attr">some</span>: <span class="string">&#x27;content&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Post request with fetch</span></span><br><span class="line">fetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  headers: &#123;<span class="string">&#x27;Content-Type&#x27;</span>: <span class="string">&#x27;application/json&#x27;</span>&#125;</span><br><span class="line">  body: <span class="built_in">JSON</span>.stringify(content)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Post request with zlFetch</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  method: <span class="string">&#x27;post&#x27;</span>,</span><br><span class="line">  body: content</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>zIFetch还使得web Tokens认证变得更加容易</p>
+<p>身份验证的标准是在头部添加一个<code>Authorization</code>密钥。<code>Authorization</code>的内容将会设置到<code>Bearer your-token-here</code>。zlFetch将帮助你添加这个<code>token</code>配置的字段。</p>
+<p>所以下面这两段代码实际上是等价的</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> token = <span class="string">&#x27;someToken&#x27;</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;</span><br><span class="line">  headers: &#123;</span><br><span class="line">    Authorization: <span class="string">`Bearer <span class="subst">$&#123;token&#125;</span>`</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Authentication with JSON Web Tokens with zlFetch</span></span><br><span class="line">zlFetch(<span class="string">&#x27;some-url&#x27;</span>, &#123;token&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Fetch是一项十分神奇的技术，它使得收发消息变得更加容易。我们不需要使用XHR请求，也不需要引入像jQuery一样的库。</p>
+<p>尽管Fetch很好，但是它处理起错误来却并不简单。你需要将许多错误信息传递到<code>.catch</code>方法中</p>
+<p>使用zlFetch可以避免进行错误处理。</p>
+<h3 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h3><p><a href="https://css-tricks.com/using-fetch/">Using Fetch</a> </p>
+]]></content>
+      <categories>
+        <category>JavaScript</category>
+      </categories>
+      <tags>
+        <tag>js</tag>
+        <tag>Ajax</tag>
+        <tag>Fetch</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>前端性能优化课件</title>
+    <url>/2021/05/23/fe-performance-optimization/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>聊一聊 前端性能优化</strong></p>
+<p>性能优化想必大家都知道，谈及性能优化，最直接的两个问题自然就是什么地方需要优化，以及怎么去优化！</p>
+<p>在谈及这两个核心的问题之前，我们先来聊一聊，为什么需要性能优化？</p>
+<p>性能优化是每一个开发者所必须面对的问题，随着为我们学习的深入，代码量越来越多，逻辑越来越复杂，对于资源的占用也越来越高。在这个时候，可能你自己的设备可以正常的运行。但是，一个产品是要面向用户的。如果在用户的设备上无法流畅运行的话，那么这个产品就不会是一个成功的产品。在这种时候，性能优化在这个时候就非常有必要性。</p>
+<h3 id="什么地方需要性能优化？"><a href="#什么地方需要性能优化？" class="headerlink" title="什么地方需要性能优化？"></a>什么地方需要性能优化？</h3><p>聊及这个问题，那就不得不提及那个经典的问题</p>
+<blockquote>
+<p>从URL输入到页面加载完成，都发生了什么？</p>
+</blockquote>
+<p>这个问题非常重要，首先，只有我们知道URL加载过程发生了什么，我们就能对这个过程进行分析，解读，从而进行优化！</p>
+<p>站在性能优化的角度，我们来解读一下这个问题。首先，客户端是通过IP和服务端建立连接的。所以说，第一步就是要通过DNS（域名解析系统）将URL转换为对应的IP地址。然后，我们通过这个IP地址，与其所对应的服务器建立起了TCP连接。建立起了连接之后，客户端就会向服务端发起一个http请求，服务端接收到我们的数据之后，就会把我们要请求的数据放在http请求的响应里。到了这个时候，浏览器就可以根据拿到的响应，将内容解析，渲染到浏览器上，展示给用户。</p>
+<p><img src="https://user-gold-cdn.xitu.io/2018/10/18/16685737b823244c?imageView2/0/w/1280/h/960/format/webp/ignore-error/1"></p>
+<p>总结一下，上面这一大段话总体来说分为五个阶段</p>
+<ol>
+<li>DNS解析</li>
+<li>TCP连接</li>
+<li>HTTP请求</li>
+<li>服务端处理HTTP请求，返回响应</li>
+<li>浏览器根据拿到的响应数据，解析响应内容，将解析的结果展示给用户</li>
+</ol>
+<p>So，如果要对浏览器进行优化，这为五个地方是绕不开的。根据这几个方向进行处理，就可以很好的进行性能优化。</p>
+<p><img src="https://user-gold-cdn.xitu.io/2018/10/23/1669f5358f63c0f8?imageView2/0/w/1280/h/960/format/webp/ignore-error/1"></p>
+<h3 id="对应优化"><a href="#对应优化" class="headerlink" title="对应优化"></a>对应优化</h3><h4 id="DNS解析"><a href="#DNS解析" class="headerlink" title="DNS解析"></a>DNS解析</h4><p>俗话说得好，有DNS的地方，就有缓存。</p>
+<h5 id="简单的回顾一下DNS"><a href="#简单的回顾一下DNS" class="headerlink" title="简单的回顾一下DNS"></a>简单的回顾一下DNS</h5><blockquote>
+<p>全称 Domain Name System ,即域名系统。万维网上作为域名和IP地址相互映射的一个分布式数据库，能够使用户更方便的访问互联网，而不用去记住能够被机器直接读取的IP数串。</p>
+</blockquote>
+<p>通过域名,最终得到该域名对应的IP地址的过程叫做域名解析（或主机名解析）。</p>
+<blockquote>
+<p><a href="http://www.baidu.com/">www.baidu.com</a> (域名) - DNS解析 -&gt; 39.156.69.79 (IP地址)</p>
+</blockquote>
+<h5 id="DNS缓存"><a href="#DNS缓存" class="headerlink" title="DNS缓存"></a>DNS缓存</h5><p>浏览器、操作系统、Local DNS、根域名服务器，它们都会对DNS结果做一定程度的缓存。</p>
+<p>DNS查询过程如下:</p>
+<blockquote>
+<ol>
+<li>首先搜索浏览器自身的DNS缓存,如果存在，则域名解析到此完成。</li>
+<li>如果浏览器自身的缓存里面没有找到对应的条目，那么会尝试读取操作系统的hosts文件看是否存在对应的映射关系,如果存在，则域名解析到此完成。</li>
+<li>如果本地hosts文件不存在映射关系，则查找本地DNS服务器(ISP服务器,或者自己手动设置的DNS服务器),如果存在,域名到此解析完成。</li>
+<li>如果本地DNS服务器还没找到的话,它就会向根服务器发出请求,进行递归查询。</li>
+</ol>
+</blockquote>
+<p>浏览器在获取网站域名的实际IP地址后会对其IP进行缓存，减少网络请求的损耗。每种浏览器都有一个固定的DNS缓存时间，其中Chrome的过期时间是1分钟，在这个期限内不会重新请求DNS。Chrome浏览器看本身的DNS缓存时间比较方便，在地址栏输入：</p>
+<blockquote>
+<p><code>chrome://net-internals/#dns</code></p>
+</blockquote>
+<h4 id="DNS-prefetch"><a href="#DNS-prefetch" class="headerlink" title="DNS prefetch"></a>DNS prefetch</h4><p>提前解析之后可能会用到的域名，使解析结果缓存到<strong>系统缓存</strong>（Chromium）中，缩短DNS解析时间，来提高网站的访问速度。</p>
+<p> DNS Prefetch 主要分为两个步骤</p>
+<ol>
+<li>html 源码下载完成后，会解析页面的包含链接的标签，提前查询对应的域名。</li>
+<li>对于访问过的页面，浏览器会记录一份域名列表，当再次打开时，会在 html 下载的同时去解析 DNS。</li>
+</ol>
+<p>DNS预解析分为自动解析和主动解析</p>
+<ul>
+<li><p>自动解析</p>
+<p>浏览器使用超链接的href属性来查找要预解析的主机名。当遇到a标签，浏览器会自动将href中的域名解析为IP地址，这个解析过程是与用户浏览网页并行处理的。但是为了确保安全性，在HTTPS页面中不会自动解析。</p>
+</li>
+<li><p>手动解析</p>
+<p>在页面添加如下标记：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;dns-prefetch&quot;</span> <span class="attr">href</span>=<span class="string">&quot;https://fonts.gstatic.com/&quot;</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>上面的link标签会让浏览器预取”<a href="https://fonts.gstatic.com/&quot;%E7%9A%84%E8%A7%A3%E6%9E%90">https://fonts.gstatic.com/&quot;的解析</a></p>
+<blockquote>
+<p>对于HTTPS网页，如果你希望它开启自动解析功能时，添加如下标记：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">&quot;x-dns-prefetch-control&quot;</span> <span class="attr">content</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>希望在HTTP页面关闭自动解析功能时，添加如下标记：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">&quot;x-dns-prefetch-control&quot;</span> <span class="attr">content</span>=<span class="string">&quot;off&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ul>
+<h4 id="TCP链接"><a href="#TCP链接" class="headerlink" title="TCP链接"></a>TCP链接</h4><p>长连接、预连接</p>
+<h5 id="预连接"><a href="#预连接" class="headerlink" title="预连接"></a>预连接</h5><p>preconnect 允许浏览器在一个 HTTP 请求正式发给服务器前预先执行一些操作，这包括 DNS 解析，TLS 协商，TCP 握手，这消除了往返延迟并为用户节省了时间。可以这样使用：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">href</span>=<span class="string">&quot;https://cdn.domain.com&quot;</span> <span class="attr">rel</span>=<span class="string">&quot;preconnect&quot;</span> <span class="attr">crossorigin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2020/png/268395/1594793111609-cef98f2d-712d-4c9d-a7e9-062ab3efbe63.png" alt="preconnect.png"></p>
+<h4 id="一些其他的pre"><a href="#一些其他的pre" class="headerlink" title="一些其他的pre"></a>一些其他的pre</h4><h5 id="PreRender"><a href="#PreRender" class="headerlink" title="PreRender"></a>PreRender</h5><p>这是一个非常猛的预加载，因为它可以加载文档的所有资源</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;prerender&quot;</span> <span class="attr">href</span>=<span class="string">&quot;http://example.com&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="Preload"><a href="#Preload" class="headerlink" title="Preload"></a>Preload</h5><p>preload 顾名思义就是一种预加载的方式，它通过向浏览器声明一个需要提交加载的资源，当资源真正被使用的时候立即执行，就无需等待网络的消耗。</p>
+<p>这和浏览器的预加载不同，浏览器的预加载HTML里声明的资源。而perload实际上已经突破了这个限制，它还可以加载在CSS和JavaScript中的资源。</p>
+<p>用法：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 使用 link 标签静态标记需要预加载的资源 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;preload&quot;</span> <span class="attr">href</span>=<span class="string">&quot;/path/to/style.css&quot;</span> <span class="attr">as</span>=<span class="string">&quot;style&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- 或使用脚本动态创建一个 link 标签后插入到 head 头部 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript"><span class="keyword">const</span> link = <span class="built_in">document</span>.createElement(<span class="string">&#x27;link&#x27;</span>);</span></span><br><span class="line"><span class="javascript">link.rel = <span class="string">&#x27;preload&#x27;</span>;</span></span><br><span class="line"><span class="javascript">link.as = <span class="string">&#x27;style&#x27;</span>;</span></span><br><span class="line"><span class="javascript">link.href = <span class="string">&#x27;/path/to/style.css&#x27;</span>;</span></span><br><span class="line"><span class="javascript"><span class="built_in">document</span>.head.appendChild(link);</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>当浏览器解析到这些代码就会去加载 href 中对应的资源但不执行，待到真正使用到的时候再执行。</p>
+<h5 id="Prefetch"><a href="#Prefetch" class="headerlink" title="Prefetch"></a>Prefetch</h5><p>prefetch 跟 preload 不同，它的作用是告诉浏览器未来可能会使用到的某个资源，浏览器就会在闲时去加载对应的资源，若能预测到用户的行为，比如懒加载，点击到其它页面等则相当于提前预加载了需要的资源。它的用法跟 preload 是一样的：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;prefetch&quot;</span> <span class="attr">href</span>=<span class="string">&quot;/path/to/style.css&quot;</span> <span class="attr">as</span>=<span class="string">&quot;style&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong></p>
+<blockquote>
+<ol>
+<li>不要将 preload 和 prefetch 进行混用，它们分别适用于不同的场景，对于同一个资源同时使用 preload 和 prefetch 会造成二次的下载。</li>
+<li>preload 字体不带 crossorigin 也将会二次获取！ 确保你对 preload 的字体添加 crossorigin 属性，否则他会被下载两次，这个请求使用匿名的跨域模式。这个建议也适用于字体文件在相同域名下，也适用于其他域名的获取(比如说默认的异步获取)。</li>
+</ol>
+</blockquote>
+<h2 id="能看得见的优化——图片优化"><a href="#能看得见的优化——图片优化" class="headerlink" title="能看得见的优化——图片优化"></a>能看得见的优化——图片优化</h2><p>最简单的图片优化——压缩图片</p>
+<p>图片压缩工具：<a href="https://tinypng.com/">https://tinypng.com/</a></p>
+<h3 id="2021年，前端图片资源占比不断增加"><a href="#2021年，前端图片资源占比不断增加" class="headerlink" title="2021年，前端图片资源占比不断增加"></a>2021年，前端图片资源占比不断增加</h3><p>推荐看看 <a href="https://httparchive.org/reports/page-weight#bytesTotal">HTTP-Archive</a> 这个网站，它可以定期抓取Web站点，并记录资源使用的情况。我们可以看到世界范围内Web站点资源变化的趋势。</p>
+<p>截止到2021年5月14日，过去一年Web资源请求的结果是这样的</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/image%E4%BC%98%E5%8C%961.png"></p>
+<p>我们可以看到，过去的一年，Web请求资源的大小提升的十分迅速。</p>
+<p>而具体到图片这一个选项</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/image%E4%BC%98%E5%8C%962.png"></p>
+<p>虽然增长的没有总体资源那么迅速，但是我们可以看到，它的占比是十分巨大的，仅仅是单个的图片资源，就占了全部资源将近一半的比例。</p>
+<p>所以，如果我们在图片优化优化方面有了长足的进步，那么对于前端方面整体的性能优化会有相当大的提升。</p>
+<h3 id="前端的图片选择"><a href="#前端的图片选择" class="headerlink" title="前端的图片选择"></a>前端的图片选择</h3><h4 id="JPEG-JPG"><a href="#JPEG-JPG" class="headerlink" title="JPEG/JPG"></a>JPEG/JPG</h4><ul>
+<li>关键字：有损压缩、体积小、加载快、不支持透明</li>
+<li>优点：JPG 最大的特点是<strong>有损压缩</strong>。这种高效的压缩算法使它成为了一种非常轻巧的图片格式。另一方面，即使被称为“有损”压缩，JPG的压缩方式仍然是一种高质量的压缩方式：当我们把图片体积压缩至原有体积的 50% 以下时，JPG 仍然可以保持住 60% 的品质。此外，JPG 格式以 24 位存储单个图，可以呈现多达 1600 万种颜色，足以应对大多数场景下对色彩的要求，这一点决定了它压缩前后的质量损耗并不容易被我们人类的肉眼所察觉——前提是你用对了业务场景。</li>
+<li>缺点：有损压缩在上文所展示的轮播图上确实很难露出马脚，但当它处理<strong>矢量图形</strong>和 <strong>Logo</strong> 等线条感较强、颜色对比强烈的图像时，人为压缩导致的图片模糊会相当明显。此外，JPEG 图像<strong>不支持透明度处理</strong>，透明图片需要召唤 PNG 来呈现。</li>
+<li>使用场景：JPG的特点决定了它适合使用在那种需要色彩丰富的图片的场景中。像一些背景图，banner大图，一般用的都是JPG图片.</li>
+</ul>
+<p>广大的电商网站（例如淘宝），首页最醒目的，色彩最丰富的大图，往往使用的都是JPG</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/image%E4%BC%98%E5%8C%963.png"></p>
+<h4 id="PNG-8-与-PNG-24"><a href="#PNG-8-与-PNG-24" class="headerlink" title="PNG-8 与 PNG-24"></a>PNG-8 与 PNG-24</h4><ul>
+<li>关键字：无损压缩、质量高、体积大、支持透明</li>
+<li>优点：PNG是一种无损压缩的高保真的图片格式。8 和 24，这里都是二进制数的位数。8 位的 PNG 最多支持 256 种颜色，而 24 位的可以呈现约 1600 万种颜色。PNG 图片具有比 JPG 更强的色彩表现力，对线条的处理更加细腻，对透明度有良好的支持。</li>
+<li>缺点：体积太大</li>
+<li>使用场景：考虑到 PNG 在处理线条和颜色对比度方面的优势，我们主要用它来呈现小的 Logo、颜色简单且对比强烈的图片或背景等。比如一些小的logo和图片</li>
+</ul>
+<h4 id="SVG"><a href="#SVG" class="headerlink" title="SVG"></a>SVG</h4><ul>
+<li>关键字：文本文件、体积小、不失真、兼容性好</li>
+<li>优点：：SVG 与 PNG 和 JPG 相比，<strong>文件体积更小，可压缩性更强</strong>。作为矢量图，它最显著的优势还是在于<strong>图片可无限放大而不失真</strong>这一点上。这使得 SVG 即使是被放到视网膜屏幕上，也可以一如既往地展现出较好的成像品质——1 张 SVG 足以适配 n 种分辨率。此外，<strong>SVG 是文本文件</strong>。我们既可以像写代码一样定义 SVG，把它写在 HTML 里、成为 DOM 的一部分，具有较强的<strong>灵活性</strong>。</li>
+<li>缺点：渲染成本比较高，且存在着其它图片格式所没有的学习成本（它是可编程的）。</li>
+<li>使用场景：在我们需要使用到对兼容性和缩放清晰度要求较高的图片时，SVG是一个非常好的选择</li>
+</ul>
+<h4 id="Base64"><a href="#Base64" class="headerlink" title="Base64"></a>Base64</h4><p>在讲Base64之前，我们先说一说另一种前端图片解决方案——雪碧图（CSS Sprites）</p>
+<p>雪碧图、CSS 精灵、CSS Sprites、图像精灵，说的都是这个东西——一种将小图标和背景图像合并到一张图片上，然后利用 CSS 的背景定位来显示其中的每一部分的技术。</p>
+<blockquote>
+<p>MDN上的解释：图像精灵（sprite，意为精灵），被运用于众多使用大量小图标的网页应用之上。它可取图像的一部分来使用，使得使用一个图像文件替代多个小文件成为可能。相较于一个小图标一个图像文件，单独一张图片所需的 HTTP 请求更少，对内存和带宽更加友好。</p>
+</blockquote>
+<p>通过上面的介绍，我们知道了，雪碧图的核心其实就是通过把许多小图片放在一张大图上，减少请求图片的次数。Base64也是类似</p>
+<p>Base64 并非一种图片格式，而是一种编码方式。Base64 和雪碧图一样，是作为小图标解决方案而存在的。</p>
+<ul>
+<li>关键字：文本文件、依赖编码、小图标解决方案</li>
+<li>优点：Base64 是一种用于传输 8 Bit 字节码的编码方式，通过对图片进行 Base64 编码，我们可以直接将编码结果写入 HTML 或者写入 CSS，从而减少 HTTP 请求的次数。</li>
+<li>缺点：Base64 编码后，图片大小会膨胀为原文件的 4/3（这是由 Base64 的编码原理决定的）。</li>
+<li>使用场景<ul>
+<li>图片的实际尺寸很小(8 kb 以下)</li>
+<li>图片无法以雪碧图的形式与其它小图结合（合成雪碧图仍是主要的减少 HTTP 请求的途径，Base64 是雪碧图的补充）</li>
+<li>图片的更新频率非常低（不需我们重复编码和修改文件内容，维护成本较低）</li>
+</ul>
+</li>
+</ul>
+<p>Base64的工具推荐——webpack 的 <a href="https://github.com/webpack-contrib/url-loader">url-loader</a> </p>
+<h4 id="WebP"><a href="#WebP" class="headerlink" title="WebP"></a>WebP</h4><p>WebP 是今天在座各类图片格式中最年轻的一位，它于 2010 年被提出， 是 Google 专为 Web 开发的一种<strong>旨在加快图片加载速度</strong>的图片格式，它支持有损压缩和无损压缩。</p>
+<ul>
+<li><p>关键字：年轻的全能型选手</p>
+</li>
+<li><p>优点：WebP 像 JPEG 一样对细节丰富的图片信手拈来，像 PNG 一样支持透明，像 GIF 一样可以显示动态图片——它集多种图片文件格式的优点于一身。</p>
+<blockquote>
+<p>官方介绍：与 PNG 相比，WebP 无损图像的尺寸缩小了 26％。在等效的 SSIM 质量指数下，WebP 有损图像比同类 JPEG 图像小 25-34％。</p>
+</blockquote>
+</li>
+<li><p>缺点：WebP 纵有千般好，但它毕竟<strong>太年轻</strong>。我们知道，任何新生事物，都逃不开兼容性的大坑。现在是 2021 年 5 月，WebP 的支持情况是这样的：</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/image%E4%BC%98%E5%8C%964.png"></p>
+<p>此外，WebP 还会增加服务器的负担——和编码 JPG 文件相比，编码同样质量的 WebP 文件会占用更多的计算资源。</p>
+</li>
+<li><p>使用场景：现在限制我们使用 WebP 的最大问题不是“这个图片是否适合用 WebP 呈现”的问题，而是“浏览器是否允许 WebP”的问题。在现在来说，WebP这个格式是使用的非常少的。</p>
+</li>
+</ul>
+<h2 id="浏览器相关"><a href="#浏览器相关" class="headerlink" title="浏览器相关"></a>浏览器相关</h2><p>之前<a href="https://www.yuque.com/cxyuts/ehwmn3/uy5r8r#UeknA">浏览器的一些基础知识</a>里已经说过了。这里主要是一些复习和补充</p>
+<h3 id="复习一些和浏览器的知识"><a href="#复习一些和浏览器的知识" class="headerlink" title="复习一些和浏览器的知识"></a>复习一些和浏览器的知识</h3><h4 id="进程和线程"><a href="#进程和线程" class="headerlink" title="进程和线程"></a>进程和线程</h4><ol>
+<li><p>进程是cpu资源分配的最小单位（是能拥有资源和独立运行的最小单位）</p>
+</li>
+<li><p>线程是cpu调度的最小单位（线程是建立在进程的基础上的一次程序运行单位，一个进程中可以有多个线程）</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>浏览器是多进程的</strong></p>
+<p>浏览器之所以能够运行，是因为系统给它的进程分配了资源（cpu、内存）</p>
+<p>简单点理解，每打开一个Tab页，就相当于创建了一个独立的浏览器进程。</p>
+<p>在这里浏览器应该也有自己的优化机制，有时候打开多个tab页后，可以在Chrome任务管理器中看到，有些进程被合并了 （所以每一个Tab标签对应一个进程并不一定是绝对的）</p>
+</blockquote>
+<h4 id="浏览器的渲染过程"><a href="#浏览器的渲染过程" class="headerlink" title="浏览器的渲染过程"></a>浏览器的渲染过程</h4><p><img src="https://user-gold-cdn.xitu.io/2018/9/27/16619d637d220b20?imageView2/0/w/1280/h/960/format/webp/ignore-error/1"></p>
+<p>这张图对于浏览器的渲染过程有一个较为清晰的描述，其中的了解渲染树对浏览器渲染的理解会有一个更为清晰的认识！</p>
+<ul>
+<li>DOM 树：解析 HTML 以创建的是 DOM 树（DOM tree ）：渲染引擎开始解析 HTML 文档，转换树中的标签到 DOM 节点，它被称为“内容树”。</li>
+<li>CSSOM 树：解析 CSS（包括外部 CSS 文件和样式元素）创建的是 CSSOM 树。CSSOM 的解析过程与 DOM 的解析过程是<strong>并行的</strong>。</li>
+<li>渲染树：CSSOM 与 DOM 结合，之后我们得到的就是渲染树（Render tree ）。</li>
+<li>布局渲染树：从根节点递归调用，计算每一个元素的大小、位置等，给每个节点所应该出现在屏幕上的精确坐标，我们便得到了基于渲染树的布局渲染树（Layout of the render tree）。 </li>
+<li>绘制渲染树: 遍历渲染树，每个节点将使用 UI 后端层来绘制。整个过程叫做绘制渲染树（Painting the render tree）。</li>
+</ul>
+<h3 id="浏览器缓存机制"><a href="#浏览器缓存机制" class="headerlink" title="浏览器缓存机制"></a>浏览器缓存机制</h3><p><img src="https://upload-images.jianshu.io/upload_images/3174701-8e74b69ad9376710?imageMogr2/auto-orient/strip%7CimageView2/2/w/1200/format/webp"></p>
+<p>缓存从位置上来说，分为四种，当我们查找缓存数据找不到的时候，我们才会去请求网络</p>
+<ul>
+<li>Service Worker</li>
+<li>Memory Cache</li>
+<li>Disk Cache</li>
+<li>Push Cache</li>
+</ul>
+<h4 id="Service-Worker"><a href="#Service-Worker" class="headerlink" title="Service Worker"></a>Service Worker</h4><p>Service Worker 是运行在浏览器背后的独立线程，一般可以用来实现缓存功能。使用 Service Worker的话，传输协议必须为 HTTPS。因为 Service Worker 中涉及到请求拦截，所以必须使用 HTTPS 协议来保障安全。Service Worker 的缓存与浏览器其他内建的缓存机制不同，它可以让我们自由控制缓存哪些文件、如何匹配缓存、如何读取缓存，并且缓存是持续性的。</p>
+<p>Service Worker 实现缓存功能一般分为三个步骤：首先需要先注册 Service Worker，然后监听到 install 事件以后就可以缓存需要的文件，那么在下次用户访问的时候就可以通过拦截请求的方式查询是否存在缓存，存在缓存的话就可以直接读取缓存文件，否则就去请求数据。</p>
+<h4 id="Memory-Cache"><a href="#Memory-Cache" class="headerlink" title="Memory Cache"></a>Memory Cache</h4><p>Memory Cache 也就是内存中的缓存，主要包含的是当前中页面中已经抓取到的资源,例如页面上已经下载的样式、脚本、图片等。读取内存中的数据肯定比磁盘快,内存缓存虽然读取高效，可是缓存持续性很短，会随着进程的释放而释放。 一旦我们关闭 Tab 页面，内存中的缓存也就被释放了。</p>
+<p>但我们要知道，内存是非常宝贵的资源，其中可以提供给浏览器使用的缓存是非常小的，所以我们在使用这一部分的缓存的时候一定要精打细算。</p>
+<p>我们之前提到的一个pre prefetch 就是存在这个缓存里的。</p>
+<h4 id="Dish-Cache"><a href="#Dish-Cache" class="headerlink" title="Dish Cache"></a>Dish Cache</h4><p>Disk Cache 也就是存储在硬盘中的缓存，读取速度慢点，但是什么都能存储到磁盘中，比之 Memory Cache 胜在容量和存储时效性上。</p>
+<p>在所有浏览器缓存中，Disk Cache 覆盖面基本是最大的。它会根据 HTTP Herder 中的字段判断哪些资源需要缓存，哪些资源可以不请求直接使用，哪些资源已经过期需要重新请求。并且即使在跨站点的情况下，相同地址的资源一旦被硬盘缓存下来，就不会再次去请求数据。</p>
+<h4 id="Push-Cache"><a href="#Push-Cache" class="headerlink" title="Push Cache"></a>Push Cache</h4><p>Push Cache（推送缓存）是 HTTP/2 中的内容，当以上三种缓存都没有命中时，它才会被使用。它只在会话（Session）中存在，一旦会话结束就被释放，并且缓存时间也很短暂，在Chrome浏览器中只有5分钟左右，同时它也并非严格执行HTTP头中的缓存指令。</p>
+<p>Push Cache 的一些特性：</p>
+<ul>
+<li><p>所有的资源都能被推送，并且能够被缓存,但是 Edge 和 Safari 浏览器支持相对比较差</p>
+</li>
+<li><p>可以推送 no-cache 和 no-store 的资源</p>
+</li>
+<li><p>一旦连接被关闭，Push Cache 就被释放</p>
+</li>
+<li><p>多个页面可以使用同一个HTTP/2的连接，也就可以使用同一个Push Cache。这主要还是依赖浏览器的实现而定，出于对性能的考虑，有的浏览器会对相同域名但不同的tab标签使用同一个HTTP连接。</p>
+</li>
+<li><p>Push Cache 中的缓存只能被使用一次</p>
+</li>
+<li><p>浏览器可以拒绝接受已经存在的资源推送</p>
+</li>
+<li><p>你可以给其他域名推送资源</p>
+</li>
+</ul>
+<h5 id="缓存的选择"><a href="#缓存的选择" class="headerlink" title="缓存的选择"></a>缓存的选择</h5><ul>
+<li>对于大文件来说，大概率是不存储在内存中的，反之优先</li>
+<li>当前系统内存使用率高的话，文件优先存储进硬盘</li>
+</ul>
+<blockquote>
+<p>大多数缓存文件都是存储在Disk Cache中的</p>
+</blockquote>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/%E6%B5%8F%E8%A7%88%E5%99%A81.png"></p>
+<h4 id="用户行为对浏览器缓存的影响"><a href="#用户行为对浏览器缓存的影响" class="headerlink" title="用户行为对浏览器缓存的影响"></a>用户行为对浏览器缓存的影响</h4><ul>
+<li><p>打开网页，地址栏输入地址： 查找 disk cache 中是否有匹配。如有则使用；如没有则发送网络请求。</p>
+</li>
+<li><p>普通刷新 (F5)：因为 TAB 并没有关闭，因此 memory cache 是可用的，会被优先使用(如果匹配的话)。其次才是 disk cache。</p>
+</li>
+<li><p>强制刷新 (Ctrl + F5)：浏览器不使用缓存，因此发送的请求头部均带有 <code>Cache-control: no-cache</code>(为了兼容，还带了 <code>Pragma: no-cache</code>),服务器直接返回 200 和最新内容。</p>
+</li>
+</ul>
+<h2 id="本地储存"><a href="#本地储存" class="headerlink" title="本地储存"></a>本地储存</h2><h3 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h3><p>Cookie 的本职工作并非本地存储，而是“维持状态”。</p>
+<p>在 Web 开发的早期，人们亟需解决的一个问题就是状态管理的问题：HTTP 协议是一个无状态协议，服务器接收客户端的请求，返回一个响应，故事到此就结束了，服务器并没有记录下关于客户端的任何信息。那么下次请求的时候，如何让服务器知道“我是我”呢？</p>
+<p>在这样的背景下，Cookie 应运而生。</p>
+<p>Cookie 说白了就是一个存储在浏览器里的一个小小的文本文件，它附着在 HTTP 请求上，在浏览器和服务器之间“飞来飞去”。它可以携带用户信息，当服务器检查 Cookie 的时候，便可以获取到客户端的状态。</p>
+<h4 id="劣势"><a href="#劣势" class="headerlink" title="劣势"></a>劣势</h4><ol>
+<li><p>不够大</p>
+<p>大家知道，Cookie 是有体积上限的，它最大只能有 4 KB。当 Cookie 超过 4 KB 时，它将面临被裁切的命运。这样看来，Cookie 只能用来存取少量的信息。</p>
+</li>
+<li><p>过量的Cookie会造成大量的性能浪费</p>
+</li>
+</ol>
+<p>随着前端应用复杂度的提高，Cookie 也渐渐演化为了一个“存储多面手”——它不仅仅被用于维持状态，还被塞入了一些乱七八糟的其它信息，被迫承担起了本地存储的“重任”。在没有更好的本地存储解决方案的年代里，Cookie 小小的身体里承载了 4 KB 内存所不能承受的压力。</p>
+<p>为了弥补 Cookie 的局限性，让“专业的人做专业的事情”，Web Storage 出现了。</p>
+<h3 id="Web-Storage"><a href="#Web-Storage" class="headerlink" title="Web Storage"></a>Web Storage</h3><p>Web Storage 是 HTML 5 专门为浏览器存储而提供的数据存储机制。它又分为 Local Storage 与 Session Storage。这两组概念非常相近，我们不妨先理解它们之间的区别，再对它们的共性进行研究。</p>
+<h4 id="Local-Storage-与-Session-Storage-的区别"><a href="#Local-Storage-与-Session-Storage-的区别" class="headerlink" title="Local Storage 与 Session Storage 的区别"></a>Local Storage 与 Session Storage 的区别</h4><p>两者的区别在于<strong>生命周期</strong>与<strong>作用域</strong>的不同。</p>
+<ul>
+<li>生命周期：Local Storage 是持久化的本地存储，存储在其中的数据是永远不会过期的，使其消失的唯一办法是手动删除；而 Session Storage 是临时性的本地存储，它是会话级别的存储，当会话结束（页面被关闭）时，存储内容也随之被释放。</li>
+<li>作用域：Local Storage、Session Storage 和 Cookie 都遵循同源策略。但 Session Storage 特别的一点在于，即便是相同域名下的两个页面，只要它们<strong>不在同一个浏览器窗口中</strong>打开，那么它们的 Session Storage 内容便无法共享。</li>
+</ul>
+<h4 id="Web-Storage-的特性"><a href="#Web-Storage-的特性" class="headerlink" title="Web Storage 的特性"></a>Web Storage 的特性</h4><ul>
+<li>存储容量大：Web Storage 根据浏览器的不同，存储容量可以达到 5-10 M 之间。</li>
+<li>仅位于浏览器端，不与服务端发生通信。</li>
+</ul>
+<h3 id="IndexedDB"><a href="#IndexedDB" class="headerlink" title="IndexedDB"></a>IndexedDB</h3><p>IndexedDB 是一个运行在浏览器上的非关系型数据库。既然是数据库了，那就不是 5 M、10 M 这样小打小闹级别了。理论上来说，IndexedDB 是没有存储上限的（一般来说不会小于 250 M）。它不仅可以存储字符串，还可以存储二进制数据。</p>
+<p>IndexedDB 可以看做是 Local Storage 的一个升级，当数据的复杂度和规模上升到了 Local Storage 无法解决的程度，我们毫无疑问可以请出 IndexedDB 来帮忙。</p>
+<p>在一些需要写博客的网站，比如CSDN、慕课网 都看到了有使用 IndexedDB，用 IndexedDB 来存储文章草稿似乎很合适。</p>
+<h2 id="HTTP相关"><a href="#HTTP相关" class="headerlink" title="HTTP相关"></a>HTTP相关</h2><p>针对网络优化，我们应该做的</p>
+<ul>
+<li><p>减少DNS查询</p>
+<p>每一次域名解析都需要一次网络往返，增加请求的延时，在查询期间会阻塞网络请求</p>
+</li>
+<li><p>减少HTTP请求</p>
+<p>任何请求都不如不请求快，因此，去掉那些没有必要的请求</p>
+</li>
+<li><p>使用CDN</p>
+<p>从物理上把数据放到离客户端近的地方，可以显著减少每次TCP连接的网路时延，增加吞吐量</p>
+</li>
+<li><p>Gzip资源</p>
+<p>所有文本资源都应该使用Gzip进行压缩，然后再在服务端和客户端之间进行传输。一般来说，Gzip可以减少60%-80%文件的大小，也是一个相对简单，但是能取得明显效果的一个选项</p>
+</li>
+<li><p>避免HTTP重定向</p>
+<p>HTTP重定向十分耗时，特别是把一个客户端的重定向到一个完全不同的域名的情况下，还会导致产生额外的DNS查询，TCP连接延时等。</p>
+</li>
+</ul>
+<h3 id="HTTP管道"><a href="#HTTP管道" class="headerlink" title="HTTP管道"></a>HTTP管道</h3><p>在HTTP 1.1中，新增了两个十分有用的特性</p>
+<ul>
+<li><p>持久连接：TCP默认不关闭，可以被多个请求复用，不用声明<code>Connection: keep-alive</code>。客户端和服务端在发现对方有一段时间没有活动了，就可以主动的关闭连接。规范一些的做法是，客户端在发送最后一个请求是，发送<code>Connention: close</code>，明确要求关闭TCP连接。</p>
+</li>
+<li><p>管道机制：在同一个TCP连接里，客户端可以同时发送多个请求。这个特性进一步的提升了HTTP协议的效率。</p>
+<p>如：客户端要发送多个请求，之前的做法是，在同一个TCP连接里，先发送第一个请求，然后等待第一个请求的回应，收到了之后再发送下一个请求。管道机制则允许浏览器同时发送多个请求，但服务器还是按照顺序，先回应第一个发送的请求，再回应之后发送的请求。</p>
+</li>
+</ul>
+<blockquote>
+<p>HTTP 1.1 管道的好处就是消除了发送请求和响应的等待时间。这种并行处理请求的能力对于应用性能的提升相当的大。</p>
+</blockquote>
+<p>我们向服务器发送多个请求，服务器会先处理第一个请求，然后返回响应。接着，处理第二个请求，然后返回第二个响应。这样会产生相当多的往返延时。</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/http1.PNG"></p>
+<p><strong>持久的TCP连接获取数据</strong>：通过尽早的派发请求，不被每次响应阻塞，可以消除额外的网络往返。这样就从非持久连接下每次请求两次往返，变成了整个请求队列只需要两次往返。</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/http2.PNG"></p>
+<p>进一步的，如果我们在服务器上并行处理请求的话，还能进一步的减少请求的时间。</p>
+<p>但是，HTTP 1.x 的返回格式具有一定的局限性。我们虽然可以并行的发送请求。但是服务端并不允许相应信息交错到达。响应顺序是严格串行返回的，先发送的请求必定会先返回响应。即使后发送的请求先处理完成。</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/http3.PNG"></p>
+<p>上图：</p>
+<ul>
+<li>HTML和CSS请求同时到达，但是服务器先处理的是HTML请求</li>
+<li>服务器并行处理，先处理HTML请求，后处理CSS请求。</li>
+<li>CSS请求先处理完成，但是并没有立即被服务器返回，而是被缓冲器来等待HTML完成</li>
+<li>发送完HTML响应后，再发送服务器缓冲中的CSS响应</li>
+</ul>
+<p>所以，虽然HTTP管道对性能的提升很明显，但因为队首阻塞的现象存在，产生了一系列的副作用</p>
+<ul>
+<li>一个慢响应会阻塞所有的后续请求</li>
+<li>并行处理请求时，服务器必须缓冲管道中的响应，从而占用服务器的资源，如果有一个响应非常大的话，很容易形成服务器的受攻击面</li>
+<li>响应失败很容易造成TCP连接的终止，从而强制用户重复发送后续所有资源的请求，导致重复的处理</li>
+<li>由于可能存在中间代理，所以检测管道的兼容性，可靠性十分重要</li>
+<li>如果中间代理不支持管道，那么它可能会中断连接，也可能会把所有的请求串联起来</li>
+</ul>
+<p>由于存在着这一系列的副作用，而HTTP 1.1 的标准中却并未对此做出说明。所以，尽管HTTP管道技术的优点毋庸置疑，但是应用仍然十分有限。一些支持管道功能的浏览器，通常都将其作为一个高级选项，但大多是浏览器通常会禁用它。</p>
+<h3 id="连接和拼合"><a href="#连接和拼合" class="headerlink" title="连接和拼合"></a>连接和拼合</h3><p>最快的请求就是不用请求。不管使用什么协议，还是再什么类型的应用中，减少请求次数总是最好的性能优化手段。如果实在是无法减少网络请求的话，那么，对于HTTP 1.x 来言，可以考虑把多个资源打包捆绑到一块，然后通过一个网络请求来获取。</p>
+<ul>
+<li><p>连接</p>
+<p>把多个JavaScript或CSS组合成一个文件</p>
+</li>
+<li><p>拼合</p>
+<p>把多张图片组合成一个更大的符合图片</p>
+</li>
+</ul>
+<p>对于JavaScript和CSS来说，只要保持一定的顺序，就可以做到在保证代码的性能和执行的基础上把多个文件连接起来。对于图片来说，本文之前提到过的雪碧图就是这个思想的一个具体实现。</p>
+<p>连接和拼合技术都是属于以内容为中心的应用层优化，它们通过减少网络的往返开销，可以获得明显的性能提升。然而，实现这些技术也需要额外的处理，部署和编码，因而会给应用带来额外的复杂性。此外，把多个资源打包到一起，也可能对缓存带来额外的负担，影响页面的执行速度。</p>
+<p>对于副作用的理解，我们举一个简单的例子：一个包含了十来个JavaScript和CSS文件的应用，在产品状态下把所有的文件合并为一个JavaScript和一个CSS文件。</p>
+<ul>
+<li>相同类型的资源都位于一个URL（缓存）下面</li>
+<li>资源包可能包含当前页面不需要的内容</li>
+<li>对资源包中任何文件的更新都需要重新下载整个资源包，造成较高的资源开销</li>
+<li>JavaScript和CSS只有在传输完毕之后才会被解析执行，因此会拖慢应用的执行速度。</li>
+</ul>
+<p>在实际中，大多数的Web应用不只有一个页面，而是由多个视图构成的。每个视图都有自己的资源，同时资源之间还有部分重叠（公用的CSS，JavaScript和图片）。其实，我们可以把它看成是一种预获取，代价是降低了初始的启动速度。</p>
+<p>内存占用也是一个问题。对于雪碧图来说，浏览器必须分析整个图片，即使实际上只是显示了图片中的一小块，也要把整个图片保存在内存中。浏览器是不会把不显示的部分剔除掉的。</p>
+<blockquote>
+<p>对于打包到多少大小合适，实际上并没有一个定论。然而，谷歌的测试团队PageSpeed表明，30~50 k（压缩后），是每个JavaScript文件比较合适的大小范围。即达到了能够减少小文件带来的网络延迟，还能确保文件的执行速度不会有太大的影响。当然，具体的结果可能会因为应用类型和脚本数量的影响有所不同。</p>
+</blockquote>
+<h4 id="我们所需要做的权衡"><a href="#我们所需要做的权衡" class="headerlink" title="我们所需要做的权衡"></a>我们所需要做的权衡</h4><ul>
+<li>应用在下载很多小型资源的时候是否会被阻塞？</li>
+<li>有选择地组合一些请求对你的应用是否有好处？</li>
+<li>放弃缓存粒度对用户是否有影响？</li>
+<li>组合图片是否会占用过多的内存？</li>
+<li>首次渲染是否会造成延迟执行？</li>
+</ul>
+<p>如何平衡两者之间的关系，从而达到一个最佳性能的平衡点，是一个艺术！</p>
+<h2 id="懒加载"><a href="#懒加载" class="headerlink" title="懒加载"></a>懒加载</h2><h3 id="初识"><a href="#初识" class="headerlink" title="初识"></a>初识</h3><p>懒加载也叫延迟加载，指的是在长网页中延迟加载图像，是一种很好优化网页性能的方式。用户滚动到它们之前，可视区域外的图像不会加载。这与图像预加载相反，在长网页上使用延迟加载将使网页加载更快。在某些情况下，它还可以帮助减少服务器负载。常适用图片很多，页面很长的电商网站场景中。</p>
+<h3 id="为什么要使用懒加载"><a href="#为什么要使用懒加载" class="headerlink" title="为什么要使用懒加载"></a>为什么要使用懒加载</h3><ul>
+<li>提升用户体验</li>
+<li>减少无效资源的加载</li>
+<li>防止并发加载资源过多会阻塞JavaScript的加载</li>
+</ul>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><p>首先将页面上的图片的 <code>src</code> 属性设为空字符串，而图片的真实路径则设置在<code>data-src</code>属性中， 当页面滚动的时候需要去监听<code>scroll</code>事件，在<code>scroll</code>事件的回调中，判断我们的懒加载的图片是否进入可视区域,如果图片在可视区内将图片的<code>src</code>属性设置为<code>data-src</code> 的值，这样就可以实现延迟加载。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 获取所有的图片标签</span></span><br><span class="line"><span class="keyword">const</span> imgs = <span class="built_in">document</span>.getElementsByTagName(<span class="string">&#x27;img&#x27;</span>)</span><br><span class="line"><span class="comment">// 获取可视区域的高度</span></span><br><span class="line"><span class="keyword">const</span> viewHeight = <span class="built_in">window</span>.innerHeight || <span class="built_in">document</span>.documentElement.clientHeight</span><br><span class="line"><span class="comment">// num用于统计当前显示到了哪一张图片，避免每次都从第一张图片开始检查是否露出</span></span><br><span class="line"><span class="keyword">let</span> num = <span class="number">0</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">lazyload</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">for</span>(<span class="keyword">let</span> i=num; i&lt;imgs.length; i++) &#123;</span><br><span class="line">    <span class="comment">// 用可视区域高度减去元素顶部距离可视区域顶部的高度</span></span><br><span class="line">    <span class="keyword">let</span> distance = viewHeight - imgs[i].getBoundingClientRect().top</span><br><span class="line">    <span class="comment">// 如果可视区域高度大于等于元素顶部距离可视区域顶部的高度，说明元素露出</span></span><br><span class="line">    <span class="keyword">if</span>(distance &gt;= <span class="number">0</span> )&#123;</span><br><span class="line">      <span class="comment">// 给元素写入真实的src，展示图片</span></span><br><span class="line">      imgs[i].src = imgs[i].getAttribute(<span class="string">&#x27;data-src&#x27;</span>)</span><br><span class="line">      <span class="comment">// 前i张图片已经加载完毕，下次从第i+1张开始检查是否露出</span></span><br><span class="line">      num = i + <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 监听Scroll事件</span></span><br><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">&#x27;scroll&#x27;</span>, lazyload, <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="CDN"><a href="#CDN" class="headerlink" title="CDN"></a>CDN</h2><h3 id="初识-1"><a href="#初识-1" class="headerlink" title="初识"></a>初识</h3><p><strong>主要思路：</strong> 尽可能避开互联网上有可能影响数据传输速度和稳定性的瓶颈和环节，使内容传输的更快、更稳定</p>
+<p><strong>实现方法：</strong> 通过在网络各处放置<strong>节点服务器</strong>所构成的在现有的互联网基础之上的一层<strong>智能虚拟网络</strong>，CDN系统能够实时地根据网络流量和各节点的<strong>连接和负载</strong>状况以及到用户的<strong>距离</strong>和<strong>响应时间</strong>等综合信息将用户的请求重新<strong>导向离用户最近的服务节点</strong>上，加快访问速度</p>
+<p><strong>目的：</strong> 使用户可就近取得所需内容，解决Internet网络拥挤的状况，提高用户访问网站的响应速度</p>
+<p><strong>优势：</strong></p>
+<ol>
+<li>CDN节点解决了跨运营商和跨地域访问的问题，访问延时大大降低；</li>
+<li>大部分请求在CDN边缘节点完成，CDN起到了分流作用，减轻了源站的负载。</li>
+</ol>
+<h3 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h3><ol>
+<li><p>用户向浏览器输入<code>www.taobao.com</code>这个域名，浏览器第一次发现本地没有DNS缓存，则向网站的DNS服务器请求</p>
+</li>
+<li><p>网站的DNS域名解析器设置了CNAME，指向了<code>g.alicdn.com</code>,请求指向了CDN网络中的智能DNS负载均衡系统</p>
+</li>
+<li><p>智能DNS负载均衡系统解析域名，把对用户响应速度最快的IP节点（CDN服务器）返回给用户</p>
+</li>
+<li><p>用户向该IP节点（CDN服务器）发出请求</p>
+</li>
+<li><p>由于是第一次访问，CDN服务器会向原web站点请求，并缓存内容</p>
+</li>
+<li><p>请求结果发给用户</p>
+</li>
+</ol>
+<h3 id="解决了哪些问题"><a href="#解决了哪些问题" class="headerlink" title="解决了哪些问题"></a>解决了哪些问题</h3><ol>
+<li>缓解甚至消除了不同运营商之间互联的瓶颈造成的影响</li>
+<li>减轻了各省的出口带宽压力</li>
+<li>缓解了骨干网的压力</li>
+<li>优化了网上热点内容的分布</li>
+</ol>
+<h2 id="性能检测工具"><a href="#性能检测工具" class="headerlink" title="性能检测工具"></a>性能检测工具</h2><p><a href="https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/reference">Devtool Performance</a></p>
+<p><a href="https://developers.google.com/web/tools/lighthouse/?hl=zh-cn">Lighthouse</a></p>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Performance">Performance API</a></p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><ul>
+<li><a href="https://book.douban.com/subject/5362856/">《高性能 JavaScript》</a></li>
+<li><a href="https://juejin.im/book/5b936540f265da0a9624b04b">《前端性能优化原理与实践》</a></li>
+<li><a href="https://developers.google.com/web/fundamentals/performance/why-performance-matters"> Web 开发最佳实践手册 - Google</a></li>
+<li><a href="https://juejin.cn/post/6844903657318645767#heading-12">前端性能优化之雅虎35条军规</a></li>
+<li><a href="https://juejin.cn/post/6844904195707895816#heading-5">前端性能优化总结</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>优化</category>
+      </categories>
+      <tags>
+        <tag>前端</tag>
+        <tag>性能优化</tag>
+        <tag>HTTP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>DOM&amp;BOM课件</title>
+    <url>/2021/05/23/DOM-and-BOM/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="/assets/js/Meting.min.js"></script><h2 id="js的补充——原型与原型链⛓"><a href="#js的补充——原型与原型链⛓" class="headerlink" title="js的补充——原型与原型链⛓"></a>js的补充——原型与原型链⛓</h2><p>相信大家一定尝试过使用class定义类，使用new创建对象了吧！这其实就是ES6的语法糖。虽然这种写法非常的舒服，并且和其他高级语言（例如jvav）的语法十分类似，但是它的内部其实是用原型链实现的，这一点和一些其他语言是不一样的</p>
+<h3 id="什么是原型"><a href="#什么是原型" class="headerlink" title="什么是原型"></a>什么是原型</h3><p>原型既指构造函数的prototype属性指向的对象</p>
+<p>这句话一听，相信很多同学都会一脸懵逼。没关系，看下面这张图</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto5.jpg" alt="proto5"></p>
+<p>这张图很好的描述了一个原型链，等我们讲完之后再回过头来看，可以帮助我们更好的理解原型链</p>
+<h3 id="构造函数——Constructor"><a href="#构造函数——Constructor" class="headerlink" title="构造函数——Constructor"></a>构造函数——Constructor</h3><p>为了更清楚的理解原型，我们首先创建一个构造函数</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Person</span>(<span class="params"></span>)</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="原型——prototype"><a href="#原型——prototype" class="headerlink" title="原型——prototype"></a>原型——prototype</h3><p>原型实际上指的就是一个对象。这个对象可以被实例所继承。我们可以在原型上定义一些属性和方法，这样的话，通过继承，实例也可以拥有这些属性和方法。（继承这个行为是在new中实现的）</p>
+<p>对于什么是实例，我们放到下一点来说，让我们先来聊聊原型和构造函数</p>
+<p>原型和构造函数的关系就是，构造函数内部有一个名为prototype的属性，通过这个属性是可以访问到原型对象的！</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code1.jpg" alt="code1"></p>
+<p>我们可以看到，在这里，Person就是构造函数。Person.prototype就是原型</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto1.jpg" alt="proto1"></p>
+<h3 id="实例——instance"><a href="#实例——instance" class="headerlink" title="实例——instance"></a>实例——instance</h3><p>还记得我们刚刚提到过的实例吗，现在我们就来详细的说一说</p>
+<p>我们之前创建了一个Person构造函数，那么现在，我们就可以使用new操作符来创建构造函数</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto2.jpg" alt="proto2"></p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code2.jpg" alt="code2"></p>
+<p>我们可以使用instanceof来检查myPerson是否是Person的实例</p>
+<p>现在，我们来做点不一样的，我们可以使用prototype，在构造函数上添加一个属性</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code3.jpg" alt="code3"></p>
+<p>我们可以看到，我们在Person的原型上添加了一个属性后，实例上也继承了这个属性</p>
+<h3 id="隐式原型——proto"><a href="#隐式原型——proto" class="headerlink" title="隐式原型——proto"></a>隐式原型——proto</h3><p>实际上，通过实例，我们依然可以访问到原型</p>
+<p>这里，我们就要使用一个属性——<code>__proto__</code>(它本质上是一个内部属性，不是一个对外正式开放的API，由于浏览器的广泛支持才加入了ES6)</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto2.jpg" alt="proto3"></p>
+<p>这里，我们分别通过构造函数的<code>prototype</code>属性和实例的<code>__proto__</code>属性来访问原型，事实证明，用这两种方法都是可以访问到原型对象的</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code4.jpg" alt="code4"></p>
+<h3 id="构造函数——constructor"><a href="#构造函数——constructor" class="headerlink" title="构造函数——constructor"></a>构造函数——constructor</h3><p>前面我们说过了，构造函数可以通过prototype来访问原型，那么原型能否通过某种方法来访问构造函数呢？</p>
+<p>答案当然是可以的！！<br>这就是constructor</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code5.jpg" alt="code5"></p>
+<p>通过上面的代码，我们可以清楚的发现，Person的原型的constructor指向的就是Person本身</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto4.jpg" alt="proto4"></p>
+<blockquote>
+<p>Tip: 这里需要注意的一点是，constructor是原型的一个属性。Constructor指的才是构造函数。这个一定要弄清楚，不要弄混了！</p>
+</blockquote>
+<h3 id="实例，构造函数和原型之间的关系"><a href="#实例，构造函数和原型之间的关系" class="headerlink" title="实例，构造函数和原型之间的关系"></a>实例，构造函数和原型之间的关系</h3><p>前面基本上已经基本吧原型相关的知识点讲的7788了，大家没弄懂的话可以课下多看看课件，或者翻阅相关的资料。</p>
+<p>接下来我们要讲的是实例，构造函数和原型之间的关系</p>
+<p>之前我们说过，实例可以访问到原型对象，而原型对象可以访问到构造函数。之前，我们在实例中是无法访问构造函数的。而现在，我们可以通过原型对象为跳板，就可以实现这个操作</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code6.jpg" alt="code6"></p>
+<p>不知道大家有没有发现，在之前的代码中，我们在构造函数的原型中添加了type属性，其值为’name is Person’。而我们通过构造函数生成的实例是有type这个属性的。这是因为当我们实例的一个属性是，如果没有找到这个属性，就会追着<code>__proto__</code>到指定的原型上去找，如果还是找不到就到原型的原型上去找</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code7.jpg" alt="code7"></p>
+<p>在上面的代码中，我们尝试去寻找myPerson自身的属性，结果却并不理想。但是当我们尝试去打印myPerson.type是，却没有返回undefined。这就是上面说的遍历原型，因为我们在之前在构造函数中定义过这个属性，所以我们访问实例的type属性并没有返回undefined。</p>
+<p>如果这个比较难理解，没关系，我们稍微改一下代码</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code8.jpg" alt="code8"></p>
+<p>这里，我们改动的地方其实只有一行，我们在new完实例之后立马就给实例添加的type属性。所以，我们查找myPrson的属性是我们可以找到type，并且我们访问myPerson.type的时候也是直接访问的实例上的属性</p>
+<h3 id="原型链"><a href="#原型链" class="headerlink" title="原型链"></a>原型链</h3><p>讲了这么久了，终于要讲到原型链了！</p>
+<p>其实，有了前面的这些知识铺垫，原型链这个概念其实并不难理解。原型链就是一连串的对象，我们通过<code>__proto__</code>将其连接起来，形成了一个可以互相访问的关系。</p>
+<p>原型可以通过 <code>__proto__</code> 访问到原型的原型，比方说这里有个构造函数 Person 然后“继承”前者的有一个构造函数 People，然后 new People 得到实例 p</p>
+<p>当访问 p 中的一个非自有属性的时候，就会通过 <code>__proto__</code> 作为桥梁连接起来的一系列原型、原型的原型、原型的原型的原型直到 Object 构造函数为止。</p>
+<p>这个搜索的过程形成的链状关系就是原型链</p>
+<p>下面让我们来做一些演示</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code9.jpg" alt="code9"></p>
+<p>图例：</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/proto5.jpg" alt="proto5"></p>
+<p>原型链搜索：</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/code10.jpg" alt="code10"></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>一个完整的 JavaScript 实现应该由下列三个不同的部分组成 ：</p>
+<ul>
+<li>ECMAScript 核心：为不同的宿主环境提供核心的脚本能力；</li>
+<li><strong>DOM（文档对象模型）</strong>：规定了访问HTML 和XML 的应用程序接口；</li>
+<li><strong>BOM（浏览器对象模型）</strong>：提供了独立于内容而在浏览器窗口之间进行交互的对象和方法。</li>
+</ul>
+<p>ECMA-262 标准规定了这门语言的下列组成部分： 语法 类型  语句  关键字 保留字  操作符  对象</p>
+<h2 id="DOM"><a href="#DOM" class="headerlink" title="DOM"></a>DOM</h2><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>究竟什么是DOM呢？简单的来说，DOM是一套对文档内容进行抽象和概念化的方法。</p>
+<h4 id="举个🌰"><a href="#举个🌰" class="headerlink" title="举个🌰"></a>举个🌰</h4><p>当有人在向我们问路的时候，我们会这样告诉他，你要找的地方就在这条街前面直走左边第三栋房子。这样的话只要那个问路的人对左边和第三个的认知和我一样，那么他就能清楚的知道他要找的房子在哪里。</p>
+<p>而浏览器网页其实也是一样的，因为JavaScript预先定义了image和forms等术语，于是，我们通过这些规则，可以精准的指定到网页中的某个元素，例如：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">document</span>.images[<span class="number">2</span>]</span><br><span class="line"><span class="built_in">document</span>.forms[<span class="string">&#x27;detail&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<p>我们把这种查找文档元素的操作叫做DOM操作</p>
+<h4 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h4><p>文档对象模型，是document object model的简称。它时针对HTML和XML文档的一个API（应用程序编程接口）描绘了一个层次化的节点树，允许开发人员添加，移除和修改页面的某一部分</p>
+<h3 id="DOM的层次"><a href="#DOM的层次" class="headerlink" title="DOM的层次"></a>DOM的层次</h3><h4 id="文档：DOM中的D"><a href="#文档：DOM中的D" class="headerlink" title="文档：DOM中的D"></a>文档：DOM中的D</h4><p>在文档对象模型中，最重要的莫过于是document（文档）了。当我们创建了一个网页并且把它加载到浏览器中，浏览器就会把你写的代码转换为一个文档对象。</p>
+<h4 id="对象：DOM中的O"><a href="#对象：DOM中的O" class="headerlink" title="对象：DOM中的O"></a>对象：DOM中的O</h4><p>我们知道，对象是一种自足的数据集合。与特定对象相关联的变量称为这个对象的属性，只有特定对象才能调用的函数称为这个对象的方法。</p>
+<p>在JavaScript中，对象可以分为三种类型</p>
+<ul>
+<li>用户自定义对象：由代码编写人员自行创建的对象</li>
+<li>内建对象： JavaScript的内部对象，如Array, Math</li>
+<li>宿主对象：由浏览器提供的对象</li>
+</ul>
+<p>这里我们主要研究的是第三个——宿主对象</p>
+<p>宿主对象中，最早出现的是BOM，也就是我们后面要说的浏览器对象模型，这个我们放到后面再说。</p>
+<p>现在我们主要聊的是DOM</p>
+<h4 id="模型：DOM中的M"><a href="#模型：DOM中的M" class="headerlink" title="模型：DOM中的M"></a>模型：DOM中的M</h4><p>DOM中的M代表着模型。既然是模型，那么它就代表着他不是真实的事物，但是它却有所有它代表的真实事物的所有特点。浏览器把网页呈现出来，让我们可以看到，同时，它也生成了一个模型页面里的元素，在这个模型里都可以找到，并且，我们可以对其进行操作。</p>
+<p>DOM会把文档解析成一棵树，更确切的说，它把文档解析成了一个家谱树。在家族成员里，有父、子、兄弟等关系。这种树形结构可以很好的把一些比较复杂的关系直观的表示出来。</p>
+<p>请看下面这个简单的网页</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>DOM<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">h1</span>&gt;</span>购物清单<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">p</span>&gt;</span>必须要购买的东西<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>牛奶<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>面包<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>xxjj的应援牌<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>效果如下：</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/browser1.jpg" alt="browser"></p>
+<p>这份文档我们可以用下面的模型来表示</p>
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/DOM1.jpg" alt="DOM1"></p>
+<p>这就是有上面这个网页的代码解析出来的DOM树，比起用家谱树来描述，我觉得用节点树来描述其实更加的合适。</p>
+<p>根元素的是<code>&lt;html&gt;</code>，它有<code>&lt;head&gt;</code>和<code>&lt;body&gt;</code>两个元素。其中<code>&lt;body&gt;</code>中有三个子元素分别是<code>&lt;h1&gt;</code>、<code>&lt;p&gt;</code>和<code>&lt;ul&gt;</code>。继续往下，我们会发现。<code>&lt;ul&gt;</code>还有三个子元素<code>&lt;li&gt;</code>。</p>
+<p>通过这个节点树，我们可以清楚的知道页面上元素之间的关系。</p>
+<h3 id="节点"><a href="#节点" class="headerlink" title="节点"></a>节点</h3><p>节点是一个网络术语，它表示的是网络的一个连接点。网络就是由一些节点构成的集合。</p>
+<p>在DOM中，一个又一个的节点构成了整个文档</p>
+<p>DOM的节点分为很多类型，我们目前主要需要掌握的有三种：元素节点、文本节点和属性节点。</p>
+<h4 id="元素节点"><a href="#元素节点" class="headerlink" title="元素节点"></a>元素节点</h4><p>元素节点就相当于document的原子，它构成了网页的基本骨架。标签的名字就是元素的名字。元素节点里面还可以包含节点，也就是说，它可以拥有子节点。在一个网页中，唯一没有被包含的是元素是<html>元素</p>
+<h4 id="文本节点"><a href="#文本节点" class="headerlink" title="文本节点"></a>文本节点</h4><p>元素节点只是所有节点的一种，如果一个网页只有元素节点是肯定不行的。这样网页什么内容都没有，实际上在网页中，内容是占了绝大部分的。就像上面的那个购物清单的网页，<p>元素里所包含的内容就是文本”必须要购买的东西“。它就是一个文本节点。</p>
+<p>文本节点总是包含在元素节点的内部的，用来丰富网页的内容，但是，并非是所有的元素节点都包含有文本节点</p>
+<h4 id="属性节点"><a href="#属性节点" class="headerlink" title="属性节点"></a>属性节点</h4><p>属性节点是对一个元素进行更具体的描述，就像这样</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">li</span> <span class="attr">title</span>=<span class="string">&quot;xxjj yyds&quot;</span>&gt;</span>xxjj的应援牌<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>title=&quot;xxjj yyds&quot;</code>就是一个属性节点。我们可以看到，属性节点是放在起始标签里面的。所以，属性节点是被包含在元素节点中的。也就是说，所有的属性都被元素包含，但是并非所有的元素节点都包含着属性节点。</p>
+<h3 id="操作节点——增删改查"><a href="#操作节点——增删改查" class="headerlink" title="操作节点——增删改查"></a>操作节点——增删改查</h3><h4 id="获取节点-🚙"><a href="#获取节点-🚙" class="headerlink" title="获取节点 🚙"></a>获取节点 🚙</h4><ul>
+<li><strong>通过节点关系</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>要求</th>
+<th>操作</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>获取一个元素节点的第一个子节点/元素节点</td>
+<td>元素节点对象.firstChild/firstElementChild</td>
+<td></td>
+</tr>
+<tr>
+<td>获取一个元素节点的最后一个子节点/元素节点</td>
+<td>元素节点对象.lastChild/lastElementChild</td>
+<td></td>
+</tr>
+<tr>
+<td>获取一个元素节点的下一个节点对象/元素对象</td>
+<td>元素节点对象.nextSibling/nextElementSibling</td>
+<td></td>
+</tr>
+<tr>
+<td>获取一个元素节点的上一个节点对象/元素对象</td>
+<td>元素节点对象.previousSibling/previousElementSibling</td>
+<td></td>
+</tr>
+<tr>
+<td>获取一个元素节点的父节点</td>
+<td>元素节点对象.parentNode</td>
+<td></td>
+</tr>
+<tr>
+<td>获取一个元素节点的所有子节点</td>
+<td>元素节点对象.childNodes/children</td>
+<td>获取到的是一个类数组</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>元素ID</strong>💎</li>
+</ul>
+<p><code>getElementById</code>方法是document对象特有的函数，传入一个参数即元素的id属性值，将返回一个对象。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;div id&#x3D;&quot;title&quot;&gt;Hi&lt;div&gt;</span><br><span class="line"></span><br><span class="line">document.getElementById(&#39;title&#39;)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>标签名字</strong>🥊</li>
+</ul>
+<p><code>getElementsByTagName</code>方法会返回一个类数组对象，每个对象数组分别对应着文档里有着给定标签里的一个元素。类似于ge tElementById，这个方法也是只有一个参数的函数，它的参数是标签名。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;ul&gt;       </span><br><span class="line">    &lt;li&gt;1&lt;&#x2F;li&gt;        </span><br><span class="line">    &lt;li&gt;2&lt;&#x2F;li&gt;        </span><br><span class="line">    &lt;li&gt;3&lt;&#x2F;li&gt;</span><br><span class="line">&lt;&#x2F;ul&gt;</span><br><span class="line">document.getElementsByTagName(&#39;li&#39;)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>类名</strong>🎩</li>
+</ul>
+<p><code>getElementsByClassName</code>方法让我们能够通过class类名来访问元素。它的返回值和getElementsByTagName类似，都是返回一个类数组对象</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;p class&#x3D;&quot;red&quot;&gt;Hi&lt;&#x2F;p&gt;</span><br><span class="line">&lt;div class&#x3D;&quot;red&quot;&gt;Hi&lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">document.getElementsByClassName(&#39;red&#39;)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>css选择器</strong>🔔</li>
+</ul>
+<p>html5中新增的两个方法，参数则都为CSS选择器字符串</p>
+<p><code>querySelector</code>方法返回单个节点，如果有多个匹配元素就只返回第一个，如果找不到匹配就返回null。</p>
+<p><code>querySelectorAll</code>方法返回一个类数组对象</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;div id&#x3D;&quot;title&quot;&gt;Hi&lt;div&gt;    </span><br><span class="line">document.querySelector(&#39;#title&#39;)</span><br><span class="line"></span><br><span class="line">&lt;ul&gt;    </span><br><span class="line">    &lt;li&gt;1&lt;&#x2F;li&gt;    </span><br><span class="line">    &lt;li&gt;2&lt;&#x2F;li&gt;    </span><br><span class="line">    &lt;li&gt;3&lt;&#x2F;li&gt;</span><br><span class="line">&lt;&#x2F;ul&gt;    </span><br><span class="line">document.querySelector(&#39;li&#39;)</span><br><span class="line"></span><br><span class="line">&lt;p class&#x3D;&quot;red&quot;&gt;Hi&lt;&#x2F;p&gt;</span><br><span class="line">&lt;div class&#x3D;&quot;red&quot;&gt;Hi&lt;&#x2F;div&gt;    </span><br><span class="line">document.querySelector(&#39;.red&#39;)</span><br></pre></td></tr></table></figure>
+
+<h4 id="增加-🚗"><a href="#增加-🚗" class="headerlink" title="增加 🚗"></a>增加 🚗</h4><ul>
+<li><p><code>Document.createElement()</code>创建一个元素节点<br><code>Document.createElement()</code>方法创建由tagName指定的HTML元素，或一个<a href="https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLUnknownElement"><code>HTMLUnknownElement</code></a>，如果tagName不被识别。</p>
+</li>
+<li><p><code>document.createTextNode()</code>创建一个文本节点</p>
+</li>
+<li><p><code>appendChild()</code>  向节点的子节点列表的末尾添加新的子节点。</p>
+</li>
+<li><p><code>insertBefore()</code> 节点任意位置插入</p>
+</li>
+</ul>
+<h4 id="删除-🚓"><a href="#删除-🚓" class="headerlink" title="删除  🚓"></a>删除  🚓</h4><ul>
+<li><code>parentNode.removeChild ()</code>从父节点下删除节点,返回删除节点<br>被移除的这个子节点仍然存在于内存中,只是没有添加到当前文档的DOM树中,因此,你还可以把这个节点重新添加回文档中 。如果不保存引用则在短时间内会被内存管理回收</li>
+</ul>
+<h4 id="修改-🚕"><a href="#修改-🚕" class="headerlink" title="修改 🚕"></a>修改 🚕</h4><ul>
+<li><p>替换节点 ：<code>replaceChild(插入的节点，被替换的节点)</code>这个方法接收两个参数，一个是插入的节点，一个是用于替换的节点，返回的是被替换的节点</p>
+</li>
+<li><p>替换内容：  <code>innerHTML</code>/<code>innerText</code>属性。</p>
+</li>
+</ul>
+<h3 id="事件🧤"><a href="#事件🧤" class="headerlink" title="事件🧤"></a>事件🧤</h3><p>事件就是用户或浏览器自身执行的某种动作。诸如 click 、 load 和 mouseover ，都是事件的名字。<br>而响应某个事件的函数就叫做事件处理程序（或事件侦听器）。事件处理程序的名字以 “on” 开头，因此<br>click 事件的事件处理程序就是 onclick ， load 事件的事件处理程序就是 onload</p>
+<table>
+<thead>
+<tr>
+<th align="center">常见的事件</th>
+<th align="center"></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">click</td>
+<td align="center">点击事件</td>
+</tr>
+<tr>
+<td align="center">mouseover</td>
+<td align="center">鼠标指针位于一个元素外部，然后用户将首次移动到另一个元素边界之内时触发</td>
+</tr>
+<tr>
+<td align="center">mouseleave</td>
+<td align="center">元素上方的光标移动到元素范围之外时触发。</td>
+</tr>
+<tr>
+<td align="center">focus</td>
+<td align="center">在元素获得焦点时触发。</td>
+</tr>
+<tr>
+<td align="center">blur</td>
+<td align="center">在元素失去焦点时触发。</td>
+</tr>
+<tr>
+<td align="center">UI（User Interface，用户界面）事件</td>
+<td align="center">当用户与页面上的元素交互时触发(load ,unload,error)</td>
+</tr>
+<tr>
+<td align="center">滚轮事件</td>
+<td align="center">当使用鼠标滚轮（或类似设备）时触发；</td>
+</tr>
+<tr>
+<td align="center">键盘事件</td>
+<td align="center">当键盘输入的时候触发</td>
+</tr>
+</tbody></table>
+<p><strong>事件有 DOM0级  DOM2级 DOM3级</strong></p>
+<h4 id="DOM-事件模型"><a href="#DOM-事件模型" class="headerlink" title="DOM 事件模型"></a>DOM 事件模型</h4><p><strong>DOM 0级事件模型</strong>：将一个函数赋值给一个事件处理程序属性</p>
+<ul>
+<li>HTML中直接绑定</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;handleClick()&quot;</span>&gt;</span>ClickMe<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span>    </span><br><span class="line"><span class="javascript"><span class="function"><span class="keyword">function</span> <span class="title">handleClick</span> (<span class="params"></span>) </span></span></span><br><span class="line">  &#123;       </span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> button = <span class="built_in">document</span>.getElementById(<span class="string">&quot;button&quot;</span>);         </span></span><br><span class="line"><span class="javascript">    button.innerHTML = <span class="string">&quot;hello!&quot;</span>    </span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>JS指定属性值</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> button = <span class="built_in">document</span>.getElementById(<span class="string">&quot;button&quot;</span>);</span><br><span class="line">button.onclick = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>删除事件处理程序</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">button.onclick = <span class="literal">null</span></span><br></pre></td></tr></table></figure>
+
+<p>从技术上来说，W3C的DOM标准并不支持上述最原始的添加事件监听函数的方式，这些都是在DOM标准形成前的事件模型。尽管没有正式的W3C标准，但这种事件模型仍然得到广泛应用，这就是我们通常所说的0级DOM。</p>
+<p><strong>DOM 2级事件模型</strong></p>
+<p>DOM1级于1998年10月1日成为W3C推荐标准。</p>
+<p>1级DOM标准中并没有定义事件相关的内容，所以没有所谓的1级DOM事件模型。</p>
+<p>DOM2级事件定义了两个方法，用于处理指定和删除事件处理程序的操作： addEventListener()<br>和 removeEventListener() 。所有DOM节点中都包含这两个方法，并且它们都接受 3 个参数：要处<br>理的事件名、作为事件处理程序的函数和一个布尔值。最后这个布尔值参数如果是 true ，表示在捕获<br>阶段调用事件处理程序；如果是 false ，表示在冒泡阶段调用事件处理程序。</p>
+<p>（事件冒泡在之后讲）</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> button = <span class="built_in">document</span>.getElementById(<span class="string">&quot;button&quot;</span>);</span><br><span class="line"><span class="keyword">let</span> click = <span class="function"><span class="keyword">function</span> (<span class="params"></span>)</span>&#123; ... &#125;</span><br><span class="line">button.addEventListener(<span class="string">&#x27;click&#x27;</span>, click, <span class="literal">false</span>)</span><br><span class="line">button.removeEventListener(<span class="string">&#x27;click&#x27;</span>, click, <span class="literal">false</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>DOM 0级和DOM 2级事件模型比较</strong></p>
+<ul>
+<li><p>移除监听函数</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">button.onclick = <span class="literal">null</span></span><br><span class="line"></span><br><span class="line">button.removeEventListener(<span class="string">&#x27;click&#x27;</span>, click) <span class="comment">//注意，addEventListener()添加的匿名函数无法移除</span></span><br><span class="line">button.removeEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;&#125;) <span class="comment">//这样移除监听函数的方法是错误的！！</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>同时绑定多个监听器</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;button&quot;</span>&gt;</span>ClickMe<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span>        </span><br><span class="line"><span class="javascript">  <span class="keyword">let</span> button = <span class="built_in">document</span>.querySelector(<span class="string">&#x27;#button&#x27;</span>);</span></span><br><span class="line"></span><br><span class="line"><span class="javascript">  button.onclick = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="number">1</span>) &#125;        </span></span><br><span class="line"><span class="javascript">  button.onclick = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="number">2</span>) &#125;    </span></span><br><span class="line"></span><br><span class="line"><span class="javascript">  button.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="number">3</span>) &#125;, <span class="literal">false</span>)         </span></span><br><span class="line"><span class="javascript">  button.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123; <span class="built_in">console</span>.log(<span class="number">4</span>) &#125;, <span class="literal">false</span>)</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>可见DOM0 级后绑定的函数会把前边的替换掉，而DOM 2级可以同时绑定多个监听器，因此推荐使用addEventListener方法监听事件。</p>
+<p><strong>事件对象</strong> 👩🧑</p>
+<p>指定事件处理程序具有一些独到之处。首先，这样会创建一个封装着元素属性值的函数。这个<br>函数中有一个局部变量 event ，也就是<strong>事件对象</strong>。</p>
+<p>触发DOM上的事件后，会产生一个事件对象event，作为参数传给监听函数。</p>
+<p>通过 event 变量，可以直接访问事件对象，你不用自己定义它，也不用从函数的参数列表中读取。<br>在这个函数内部， this 值等于事件的目标元素。</p>
+<ul>
+<li><p>事件对象常用属性</p>
+</li>
+<li><ul>
+<li>target 事件的目标</li>
+</ul>
+</li>
+<li><ul>
+<li>type 被触发的事件的类型</li>
+</ul>
+</li>
+<li><p>事件对象常用方法</p>
+</li>
+<li><ul>
+<li>preventDefault() 取消事件的默认行为</li>
+</ul>
+</li>
+<li><ul>
+<li>stopPropagation() 阻止事件继续传播（冒泡和捕获），不包括在当前节点上其他的事件监听函数。</li>
+</ul>
+</li>
+<li><ul>
+<li>stopImmediatePropagation() 阻止所有事件继续传播，包括在当前节点上其他的事件监听函数。return false 相当于同时执行了 event.preventDefault 与 event.stopPropagation</li>
+</ul>
+</li>
+</ul>
+<p>了解更多事件对象的属性和方法 <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Event">事件对象</a></p>
+<p>尝试一下实现页面内点击弹窗外部关闭弹窗，点击弹窗内部不会关闭弹窗。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;pop-up-window&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> body = <span class="built_in">document</span>.querySelector(<span class="string">&#x27;body&#x27;</span>);</span></span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> popUpWindow = <span class="built_in">document</span>.getElementById(<span class="string">&#x27;pop-up-window&#x27;</span>);</span></span><br><span class="line"><span class="javascript">    body.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">        popUpWindow.style.display = <span class="string">&#x27;none&#x27;</span></span></span><br><span class="line"><span class="javascript">    &#125;, <span class="literal">false</span>)</span></span><br><span class="line"><span class="javascript">    popUpWindow.addEventListener(<span class="string">&#x27;click&#x27;</span>, <span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span></span><br><span class="line"><span class="javascript">        e.stopPropagation() <span class="comment">//在弹窗内部点击时阻止事件传播，因此不会触发body的click事件    </span></span></span><br><span class="line"><span class="javascript">    &#125;, <span class="literal">false</span>)</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="事件冒泡和事件捕获"><a href="#事件冒泡和事件捕获" class="headerlink" title="事件冒泡和事件捕获"></a>事件冒泡和事件捕获</h4><p>❓ 下面的代码当中一个div元素当中有一个p子元素，如果两个元素都有一个click的处理函数，那么我们怎么才能知道哪一个函数会首先被触发呢？</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;outer&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span> <span class="attr">id</span>=<span class="string">&quot;inner&quot;</span>&gt;</span>Click me!<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>为了解决这个问题微软和网景提出了两种几乎完全相反的概念。</p>
+<p>🙃在过去糟糕的日子里，浏览器的兼容性比现在要小得多，Netscape（网景）只使用事件捕获，而Internet Explorer只使用事件冒泡。当W3C决定尝试规范这些行为并达成共识时，他们最终得到了包括这两种情况（捕捉和冒泡）的系统，最终被应用在现在浏览器里。</p>
+<p><strong>事件捕获和冒泡是现代浏览器的执行事件的两个不同阶段</strong></p>
+<p><img src="https://cdn.nlark.com/yuque/0/2019/jpeg/358252/1573824698657-f19c612f-37ac-4917-9093-04bb3567f0c3.jpeg" alt="5.2.jpeg"></p>
+<p>微软提出了名为<strong>事件冒泡</strong>(event bubbling)的事件流。事件冒泡可以形象地比喻为把一颗石头投入水中，泡泡会一直从水底冒出水面。也就是说，事件会从最内层的元素开始发生，一直向上传播，直到document对象。</p>
+<p>因此上面的例子在事件冒泡的概念下发生click事件的顺序应该是<strong>p -&gt; div -&gt; body -&gt; html -&gt; document</strong></p>
+<p>网景提出另一种事件流名为<strong>事件捕获</strong>(event capturing)。与事件冒泡相反，事件会从最外层开始发生，直到最具体的元素。</p>
+<p>上面的例子在事件捕获的概念下发生click事件的顺序应该是<strong>document -&gt; html -&gt; body -&gt; div -&gt; p</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;father&quot;</span>&gt;</span></span><br><span class="line">        father</span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;child&quot;</span>&gt;</span></span><br><span class="line">            child</span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    </span><br><span class="line"> <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> father = <span class="built_in">document</span>.querySelector(<span class="string">&#x27;.father&#x27;</span>)</span></span><br><span class="line"><span class="javascript">    <span class="keyword">let</span> child = <span class="built_in">document</span>.querySelector(<span class="string">&#x27;.child&#x27;</span>)</span></span><br><span class="line">    </span><br><span class="line"><span class="javascript">    <span class="comment">//事件捕获</span></span></span><br><span class="line"><span class="javascript">    <span class="comment">// father.addEventListener(&#x27;click&#x27;, () =&gt; &#123; alert(&#x27;father&#x27;) &#125;, true)</span></span></span><br><span class="line"><span class="javascript">    <span class="comment">// child.addEventListener(&#x27;click&#x27;, () =&gt; &#123; alert(&#x27;child&#x27;) &#125;, true)</span></span></span><br><span class="line"></span><br><span class="line"><span class="javascript">   <span class="comment">// father.addEventListener(&#x27;click&#x27;, () =&gt; &#123; alert(&#x27;father&#x27;) &#125;, false)   </span></span></span><br><span class="line"><span class="javascript">   <span class="comment">// child.addEventListener(&#x27;click&#x27;, () =&gt; &#123; alert(&#x27;child&#x27;) &#125;, false)</span></span></span><br><span class="line">    </span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>事件委托</strong>🍑</p>
+<p>对“事件处理程序过多”问题的解决方案就是事件委托。<strong>事件委托利用了事件冒泡</strong>，只指定一个事<br>件处理程序，就可以管理某一类型的所有事件。例如， click 事件会一直冒泡到 document 层次。也就<br>是说，我们可以为整个页面指定一个 onclick 事件处理程序，而不必给每个可单击的元素分别添加事<br>件处理程序。</p>
+<ul>
+<li><p>在页面中设置事件处理程序所需的时间更少。只添加一个事件处理程序所需的 DOM引用更少，<br>所花的时间也更少。</p>
+</li>
+<li><p>整个页面占用的内存空间更少，能够提升整体性能。<br>最适合采用事件委托技术的事件包括 click 、 mousedown 、 mouseup 、 keydown 、 keyup 和 keypress</p>
+</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">ul</span> <span class="attr">id</span>=<span class="string">&quot;color-list&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>red<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>yellow<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>blue<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>green<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>black<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span>&gt;</span>white<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">var</span> color_list = <span class="built_in">document</span>.getElementById(<span class="string">&#x27;color-list&#x27;</span>);</span></span><br><span class="line"><span class="javascript">    <span class="keyword">var</span> colors = color_list.getElementsByTagName(<span class="string">&#x27;li&#x27;</span>);</span></span><br><span class="line"><span class="javascript">    <span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;colors.length;i++)&#123;                          colors[i].addEventListener(<span class="string">&#x27;click&#x27;</span>,showColor,<span class="literal">false</span>);</span></span><br><span class="line">    &#125;;</span><br><span class="line"><span class="javascript">    <span class="function"><span class="keyword">function</span> <span class="title">showColor</span>(<span class="params">e</span>)</span>&#123;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">var</span> x = e.target;</span></span><br><span class="line"><span class="javascript">        alert(<span class="string">&quot;The color is &quot;</span> + x.innerHTML);</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;)();</span><br><span class="line"></span><br><span class="line"><span class="javascript">(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">var</span> color_list = <span class="built_in">document</span>.getElementById(<span class="string">&#x27;color-list&#x27;</span>);</span></span><br><span class="line"><span class="javascript">    color_list.addEventListener(<span class="string">&#x27;click&#x27;</span>,showColor,<span class="literal">false</span>);</span></span><br><span class="line"><span class="javascript">    <span class="function"><span class="keyword">function</span> <span class="title">showColor</span>(<span class="params">e</span>)</span>&#123;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">var</span> x = e.target;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">if</span>(x.nodeName.toLowerCase() === <span class="string">&#x27;li&#x27;</span>)&#123;</span></span><br><span class="line"><span class="javascript">            alert(<span class="string">&#x27;The color is &#x27;</span> + x.innerHTML);</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)();</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="BOM"><a href="#BOM" class="headerlink" title="BOM"></a>BOM</h2><p>上面我们已经聊了DOM，现在我们再来说一说BOM。BOM这个概念在前面也提到过，BOM的B指的是browser，BOM的全称是browser object model</p>
+<blockquote>
+<p><strong>浏览器对象模型</strong>(BOM)指的是由<a href="https://zh.wikipedia.org/wiki/Web%E6%B5%8F%E8%A7%88%E5%99%A8">Web浏览器</a>暴露的所有对象组成的表示模型。BOM与<a href="https://zh.wikipedia.org/wiki/%E6%96%87%E6%A1%A3%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B">DOM</a>不同，其既没有标准的实现，也没有严格的定义, 所以浏览器厂商可以自由地实现BOM。    ——维基百科</p>
+</blockquote>
+<p>我们说了BOM是由一些基本的对象构成的，那么究竟是哪些对象呢，下面我们来看一下BOM的基本对象</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/12/7/16edf3f9f4713339?imageslim"></p>
+<p>上面可以看到BOM的六大对象为：</p>
+<ol>
+<li>document  ： DOM</li>
+<li>event     : 事件对象</li>
+<li>history   : 浏览器的历史记录</li>
+<li>location  : 窗口的url  地址栏的信息</li>
+<li>screen    : 显示设备的信息</li>
+<li>navigator : 浏览器的配置信息</li>
+</ol>
+<p>在学习BOM对象之前，让我们来对比一下DOM与BOM</p>
+<table>
+<thead>
+<tr>
+<th align="center">DOM</th>
+<th align="center">BOM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">文档对象模型</td>
+<td align="center">浏览器对象模型</td>
+</tr>
+<tr>
+<td align="center">顶级对象是document</td>
+<td align="center">顶级对象是window</td>
+</tr>
+<tr>
+<td align="center">可以用来操作html页面的元素</td>
+<td align="center">用来和浏览器之间进行交互</td>
+</tr>
+<tr>
+<td align="center">标准化是w3c来制定</td>
+<td align="center">是由各浏览器厂商在各自浏览器上定义，没有一个统一的标准</td>
+</tr>
+</tbody></table>
+<h3 id="BOM的顶级对象window对象的常用方法"><a href="#BOM的顶级对象window对象的常用方法" class="headerlink" title="BOM的顶级对象window对象的常用方法"></a>BOM的顶级对象window对象的常用方法</h3><h4 id="弹窗输入"><a href="#弹窗输入" class="headerlink" title="弹窗输入"></a>弹窗输入</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> result = <span class="built_in">window</span>.prompt(text, value);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>result</code> 用来存储用户输入文字的字符串，或者是 null。</li>
+<li><code>text</code> 用来提示用户输入文字的字符串，如果没有任何提示内容，该参数可以省略不写。</li>
+<li><code>value</code> 文本输入框中的默认值，该参数也可以省略不写。不过在 Internet Explorer 7 和 8 中，省略该参数会导致输入框中显示默认值”undefined”。</li>
+</ul>
+<p>例：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> res = prompt(<span class="string">&#x27;你的名字是&#x27;</span>, <span class="string">&#x27;xxjj&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/BOM1.jpg" alt="BOM1"></p>
+<h4 id="弹窗输出"><a href="#弹窗输出" class="headerlink" title="弹窗输出"></a>弹窗输出</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line">alert(value)</span><br></pre></td></tr></table></figure>
+
+<p>例：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">alert(<span class="string">`我的名字是<span class="subst">$&#123;res&#125;</span>`</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/BOM2.jpg" alt="BOM2"></p>
+<h4 id="定时器⏰（非常重要！！！"><a href="#定时器⏰（非常重要！！！" class="headerlink" title="定时器⏰（非常重要！！！"></a>定时器⏰（非常重要！！！</h4><p><code>setTimeout(函数，时间)</code>只执行一次 , 返回一个 ID（数字），可以将这个ID传递给 <code>clearTimeout()</code> 来取消执行。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">setTimeout</span>(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123; alert(<span class="string">&quot;Hello&quot;</span>); &#125;, <span class="number">3000</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>setInterval(函数，时间)</code>无限执行</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">setInterval</span>(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123; alert(<span class="string">&quot;Hello&quot;</span>); &#125;, <span class="number">3000</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>clearTimeout(定时器名称)</code>清除定时器</p>
+<h4 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h4><ol>
+<li>confirm(“”);带确定、取消的提示框，分别返回true、false</li>
+<li>close();关闭当前浏览器窗口。</li>
+<li>open();打开一个新窗口<br>参数一：新窗口的地址<br>参数二：新窗口的名字<br>参数三：新窗口的各种配置属性</li>
+</ol>
+<h3 id="histroy对象"><a href="#histroy对象" class="headerlink" title="histroy对象"></a>histroy对象</h3><ol>
+<li>length; 查看浏览器的历史访问的网页的个数；</li>
+<li>back(); 加载history列表中的前一个url</li>
+<li>forward();加载history列表中的下一个url</li>
+<li>go(); 加载history列表中的某个具体页面</li>
+<li>go(0);相当于刷新页面</li>
+</ol>
+<h3 id="location对象"><a href="#location对象" class="headerlink" title="location对象"></a>location对象</h3><p>里面封装当前窗口打开的url</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">location</span><br><span class="line">location.href <span class="comment">// 完整的URL路径</span></span><br><span class="line">location.protocol <span class="comment">// 协议名            </span></span><br><span class="line">location.hostname <span class="comment">// 主机名</span></span><br><span class="line">location.port <span class="comment">// 端口号</span></span><br><span class="line">location.host <span class="comment">// 主机名+端口号        </span></span><br><span class="line">location.pathname <span class="comment">// 文件路径</span></span><br><span class="line">location.search <span class="comment">// 从？开始的参数部分</span></span><br><span class="line">location.hash <span class="comment">// 从#开始的锚点部分</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="screen对象"><a href="#screen对象" class="headerlink" title="screen对象"></a>screen对象</h3><p>显示设备的信息</p>
+<ol>
+<li>screen.height;屏幕的像素高度</li>
+<li>screen.width;屏幕的像素宽度</li>
+<li>screen.availHeight;屏幕的像素高度减去系统部件高度之后的值(只读)</li>
+<li>screen.availWidth;屏幕的像素宽度减去系统部件宽度之后的值(只读)</li>
+<li>screen.availLeft;未被系统部件占用的最左侧的像素值(只读)[chrome和firefox返回0，IE不支持]</li>
+<li>screen.availTop;未被系统部件占用的最上方的像素值(只读)[chrome和firefox返回0，IE不支持]</li>
+</ol>
+<h3 id="navigator对象"><a href="#navigator对象" class="headerlink" title="navigator对象"></a>navigator对象</h3><p>  提供了与浏览器有关的信息</p>
+<ol>
+<li>navigator.appCodeName;浏览器的代码名。</li>
+<li>navigator.appName;完整的浏览器名称。</li>
+<li>navigator.appVersion;浏览器的平台和版本信息。</li>
+<li>navigator.userAgent;包含浏览器的名称、内核、版本号等。</li>
+<li>navigator.plugins;检测有无插件。</li>
+<li>navigator.onLine;表示是否连接到了因特网。</li>
+</ol>
+<h2 id="关于浏览器宽高尺寸的获取"><a href="#关于浏览器宽高尺寸的获取" class="headerlink" title="关于浏览器宽高尺寸的获取"></a>关于浏览器宽高尺寸的获取</h2><h3 id="窗口位置"><a href="#窗口位置" class="headerlink" title="窗口位置"></a>窗口位置</h3><p>用来确定和修改 window 对象位置的属性和方法有很多。IE、Safari、Opera 和 Chrome 都提供了<br><code>screenLeft</code>和 <code>screenTop</code> 属性，分别用于表示窗口相对于屏幕左边和上边的位置。</p>
+<h3 id="窗口大小"><a href="#窗口大小" class="headerlink" title="窗口大小"></a>窗口大小</h3><p>跨浏览器确定一个窗口的大小不是一件简单的事。IE9+、Firefox、Safari、Opera 和 Chrome 均为此提<br>供了 4个属性： <code>innerWidth</code> 、 <code>innerHeight</code> 、 <code>outerWidth</code> 和 <code>outerHeight</code> 。</p>
+<h3 id="滚动距离"><a href="#滚动距离" class="headerlink" title="滚动距离"></a>滚动距离</h3><ul>
+<li><code>window.screenTop</code></li>
+</ul>
+<p><img src="https://www.yuque.com/api/filetransfer/images?url=https://developer.mozilla.org/@api/deki/files/842/=ScrollTop.png&sign=b875b90bbc079fd402de167891a9d3c515093a62d673a42fbaa7d30111b8688b"></p>
+<ul>
+<li><code>window.screenLeft</code></li>
+</ul>
+<h3 id="document相关宽高介绍📑"><a href="#document相关宽高介绍📑" class="headerlink" title="document相关宽高介绍📑"></a>document相关宽高介绍📑</h3><p><strong>与client相关的宽高</strong></p>
+<p>可视区指的是浏览器减去上面菜单栏，下面状态栏和任务栏，右边滚动条（如果有的话）后的中间网页内容的单页面积大小。</p>
+<p>与client相关的宽高又有如下几个属性：</p>
+<ul>
+<li><p><code>document.body.clientWidth</code></p>
+</li>
+<li><p><code>document.body.clientHeight</code></p>
+</li>
+<li><p>假入无padding无滚动条，<code>clientWidth=style.width</code></p>
+</li>
+<li><p>假如有padding无滚动轴，<code>clientWidth</code>=<code>style.width</code>+<code>style.padding*2</code></p>
+</li>
+<li><p>假如有padding有滚动，且滚动是显示的，<code>clientWidth</code>=<code>style.width</code>+<code>style.padding*2</code>滚动轴宽度</p>
+</li>
+</ul>
+<p><strong>与offset相关宽高介绍</strong></p>
+<ul>
+<li><p><code>document.body.offsetWidth</code> =<code>clientWidth+border</code></p>
+</li>
+<li><p><code>document.body.offsetHeight</code> =<code>clientHeight+border</code></p>
+</li>
+<li><p><code>offsetLeft</code>/ <code>offsetTop</code> (可控制元素移动)</p>
+</li>
+<li><p>以<code>offsetLeft</code>为例进行说明，在不同的浏览器中其值不同，且与父元素的position属性（relative,absolute,fixed）有关</p>
+</li>
+<li><ul>
+<li>在父元素均不设置position属性时，在Chrome，opera和IE浏览器中<code>offsetLeft</code>是元素边框外侧到浏览器窗口内侧的距离 且<code>body.offsetLeft</code>=0</li>
+</ul>
+</li>
+<li><ul>
+<li><p>当父元素设置position元素时又分为两种情况</p>
+</li>
+<li><ul>
+<li>如果父元素是body且body设置了position属性，在Chrome和opera浏览器中<code>offsetLeft</code>是元素边框外侧到body边框外侧的距离 </li>
+<li>如果父元素不是body元素且设置了position属性时，<code>offsetLeft</code>为元素边框外侧到父元素边框内测的距离</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="作业"><a href="#作业" class="headerlink" title="作业"></a>作业</h2><ul>
+<li>Lv1: 下面这段代码，有些字被遮起来了。要求: 在这个页面的最下方添加一个按钮，点击让这些字显示出来，再点击再次被遮挡。</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">style</span>&gt;</span></span><br><span class="line">    span &#123;</span><br><span class="line">      background-color: black;</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>刚才有个朋友问我：<span class="tag">&lt;<span class="name">span</span>&gt;</span>英<span class="tag">&lt;/<span class="name">span</span>&gt;</span>老师，发生甚么事了？<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>给我发来两张截图，<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我一看！噢，原来是昨晚有个年轻人，<span class="tag">&lt;<span class="name">span</span>&gt;</span>5nm<span class="tag">&lt;/<span class="name">span</span>&gt;</span>的，说能不能教教我<span class="tag">&lt;<span class="name">span</span>&gt;</span>挤牙膏大法<span class="tag">&lt;/<span class="name">span</span>&gt;</span>。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我说可以，我说你用<span class="tag">&lt;<span class="name">span</span>&gt;</span>Arm<span class="tag">&lt;/<span class="name">span</span>&gt;</span>的死劲不好用，他不服气。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我说小朋友你<span class="tag">&lt;<span class="name">span</span>&gt;</span>两个核贵不过我一个核<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，他说你这也没用，我说我这个有用。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>这是化劲，传统<span class="tag">&lt;<span class="name">span</span>&gt;</span>摩尔定律<span class="tag">&lt;/<span class="name">span</span>&gt;</span>是讲化劲的，四两八千金，200多核的<span class="tag">&lt;<span class="name">span</span>&gt;</span>英国大伟达<span class="tag">&lt;/<span class="name">span</span>&gt;</span>都干不过我一个核。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>他说要和我试试，我说可以。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我一说，他啪就做出来了，很快啊。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>然后上来就是一个<span class="tag">&lt;<span class="name">span</span>&gt;</span>4x CPU<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，一个<span class="tag">&lt;<span class="name">span</span>&gt;</span>6x GPU<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，一个<span class="tag">&lt;<span class="name">span</span>&gt;</span>15x ML<span class="tag">&lt;/<span class="name">span</span>&gt;</span>！<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我全部防出去了，防出去以后自然是传统<span class="tag">&lt;<span class="name">span</span>&gt;</span>挤牙膏<span class="tag">&lt;/<span class="name">span</span>&gt;</span>宜点到为止，右拳指着<span class="tag">&lt;<span class="name">span</span>&gt;</span>软件兼容<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，没打他。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>因为这时间按传统他已经输了，他也承认我先打到他要害。我收拳的时间不打了，他突然袭击<span class="tag">&lt;<span class="name">span</span>&gt;</span>“不涨价”<span class="tag">&lt;/<span class="name">span</span>&gt;</span>来打我脸。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我大E了啊，没有闪。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>两分多钟以后，当时流眼泪了，捂着眼我就停停。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>我说小<span class="tag">&lt;<span class="name">span</span>&gt;</span>Apple<span class="tag">&lt;/<span class="name">span</span>&gt;</span>你不讲<span class="tag">&lt;<span class="name">span</span>&gt;</span>摩尔定律<span class="tag">&lt;/<span class="name">span</span>&gt;</span>。他忙说对不起，不懂规矩啊，他说他是乱打的。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>他可不是乱打的，<span class="tag">&lt;<span class="name">span</span>&gt;</span>CPU GPU<span class="tag">&lt;/<span class="name">span</span>&gt;</span>训练有素，后来他说在<span class="tag">&lt;<span class="name">span</span>&gt;</span>手机<span class="tag">&lt;/<span class="name">span</span>&gt;</span>上练过十几年<span class="tag">&lt;<span class="name">span</span>&gt;</span>芯片<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，看来是有备而来。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>这个<span class="tag">&lt;<span class="name">span</span>&gt;</span>Apple<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，不讲武德。来，骗！来，偷袭！我这个<span class="tag">&lt;<span class="name">span</span>&gt;</span>14nm+++<span class="tag">&lt;/<span class="name">span</span>&gt;</span>的老同志。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>这好吗？这不好。我劝这个<span class="tag">&lt;<span class="name">span</span>&gt;</span>Apple<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，耗子尾汁，好好反思，以后不要再犯这样的聪明，小聪明。<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">span</span>&gt;</span>IT界<span class="tag">&lt;/<span class="name">span</span>&gt;</span>要以核为贵，要讲<span class="tag">&lt;<span class="name">span</span>&gt;</span>摩尔定律<span class="tag">&lt;/<span class="name">span</span>&gt;</span>，不要搞窝里斗！<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>谢谢朋友们！<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://image-cloud-1303857647.cos.ap-chengdu.myqcloud.com/%E7%AC%94%E8%AE%B0/2020%E7%BA%A2%E5%B2%A9Web%E5%89%8D%E7%AB%AF%E8%AF%BE%E4%BB%B6/%E7%AC%AC%E4%BA%94%E6%AC%A1%E8%AF%BE%E5%9B%BE%E7%89%87/homework.jpg" alt="homework"></p>
+<ul>
+<li>Lv2:  自己构建一个简单页面 ，实现一下几个按钮功能</li>
+</ul>
+<ul>
+<li><ul>
+<li>主题颜色更改按钮： 点击后，可以更改页面主题颜色</li>
+</ul>
+</li>
+<li><ul>
+<li>字体大小更改按钮：点击后，可以更改字体大小（最少三个大小）</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>Lv3:  对于下列列表：</p>
+<ul>
+<li>实现点击不同的 <code>li</code>  能打印出所对应的内容（通过事件委托）</li>
+<li>通过 <code>js</code>  设置 单数<code>li</code>样式为红色 , 双数 <code>li</code>为绿色</li>
+</ul>
+</li>
+<li><p>Lv4:  实现一个留言板</p>
+<p>要求： 在评论区输入留言 ，点击发送后，在留言板中能够插入新的留言 </p>
+</li>
+</ul>
+<h2 id="Ref"><a href="#Ref" class="headerlink" title="Ref"></a>Ref</h2><p><a href="https://juejin.im/post/6844903853956022285">理解：javascript中DOM0,DOM2,DOM3级事件模型</a></p>
+<p><a href="https://juejin.im/post/6844903545414615048">原生DOM入门</a></p>
+<p><a href="https://juejin.im/post/6844904015646441485">JS之BOM详解</a></p>
+]]></content>
+      <categories>
+        <category>JavaScript</category>
+      </categories>
+      <tags>
+        <tag>js</tag>
+        <tag>DOM</tag>
+        <tag>BOM</tag>
+        <tag>prototype</tag>
+      </tags>
+  </entry>
+</search>
