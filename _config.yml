@@ -108,7 +108,7 @@ deploy:
   repo: 
     github: https://github.com/myjdml/myjdml.github.io.git
     gitee: https://gitee.com/myjdml/myjdml.git
-    ali: git@159.75.114.137:/var/repo/hexo.git
+    cencent: git@159.75.114.137:/var/repo/hexo.git
   branch: master
 
 # 搜索配置文件
