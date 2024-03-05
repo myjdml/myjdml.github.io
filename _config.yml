@@ -106,9 +106,9 @@ theme: butterfly
 deploy:
   type: git
   repo: 
+    cencent: git@159.75.114.137:/var/repo/hexo.git
     github: https://github.com/myjdml/myjdml.github.io.git
     gitee: https://gitee.com/myjdml/myjdml.git
-    cencent: git@159.75.114.137:/var/repo/hexo.git
   branch: master
 
 # 搜索配置文件
