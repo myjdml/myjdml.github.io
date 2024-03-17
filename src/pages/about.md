@@ -3,34 +3,17 @@ layout: ../layouts/AboutLayout.astro
 title: "About"
 ---
 
-AstroPaper is a minimal, responsive and SEO-friendly Astro blog theme. I designed and crafted this based on [my personal blog](https://satnaing.dev/blog).
+总之，这里暂时就是我的新博客了，舍弃了之前Hexo花里胡哨的模块。现在，只有文章的核心能力。
 
-This theme is aimed to be accessible out of the box. Light and dark mode are supported by
-default and additional color schemes can also be configured.
+未来，也许会基于该框架开发出一些其他模块，例如留言板，日记。不过都是后话了。
 
-This theme is self-documented \_ which means articles/posts in this theme can also be considered as documentations. So, see the documentation for more info.
+## TODO
 
-<div>
-  <img src="/assets/dev.svg" class="sm:w-1/2 mx-auto" alt="coding dev illustration">
-</div>
+因为工作原因，暂时没法一次全部迁移完，只迁移了部分核心文章，未来要做的事情：
 
-## Tech Stack
-
-This theme is written in vanilla JavaScript (+ TypeScript for type checking) and a little bit of ReactJS for some interactions. TailwindCSS is used for styling; and Markdown is used for blog contents.
-
-## Features
-
-Here are certain features of this site.
-
-- fully responsive and accessible
-- SEO-friendly
-- light & dark mode
-- fuzzy search
-- super fast performance
-- draft posts
-- pagination
-- sitemap & rss feed
-- highly customizable
-
-If you like this theme, you can star/contribute to the [repo](https://github.com/satnaing/astro-paper).  
-Or you can even give any feedback via my [email](mailto:contact@satnaing.dev).
+- 自动打包发布master
+- 自动部署服务器，服务器nginx配置
+- 每个月更新一篇文章。专注前端前沿，GO，RUST。
+- 简历模块，缺失，待恢复。
+- 更新简历，简历太久没更新了。
+- social link 补齐，现在只有最简单的邮件和github
