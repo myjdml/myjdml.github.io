@@ -15,8 +15,6 @@ description: "This is a post which from Hexo to Astro."
 
 ## 关于AJAX的一些回顾
 
-![ajax](/images/Fetch/ajax.jpg)
-
 基本步骤：
 
 进行Ajax请求相信大家一定不陌生，这里我们一起回顾一下，ajax请求是什么样的！
@@ -92,8 +90,6 @@ $.ajax("some-url", {
 ```
 
 ### Fetch的支持
-
-![image](/images/Fetch/brower.png)
 
 Fetch的支持性非常好，支持几乎所有的主流浏览器（老版的IE和迷你版的欧朋除外）。而且因为Fetch是原生的方法，所以它在项目中使用十分的安全。如果你需要使用一些方法，原生不支持。这里有一些[补充](https://github.com/github/fetch)
 
@@ -229,8 +225,6 @@ fetch("https://api.github.com/users/chrissycoyier/repos")
 
 然后触发你的fetch请求，你将会得到这样的一个结果：
 
-![image](/images/Fetch/error1.png)
-
 > Fetch failed, but the code that gets executed is the second `.then` instead of `.catch`
 
 为什么第二个`.then`方法会调用执行？为什么promise不想我们所期望的那样使用`.catch`去捕获错误。太恐怖了！！！😱😱😱
@@ -300,15 +294,11 @@ fetch("https://api.github.com/users/chrissycoyier/repos")
   .catch(error => console.log("error is", error));
 ```
 
-![image](/images/eFetch/error2.png)
-
 > Failed request, but error gets passed into catch correctly
 
 太好了！！现在我们有办法去捕获错误了。
 
 但是我们这样处理错误信息返回一个普通的文本并不是特别的友好。我们并不知道究竟是什么地方出问题了。我十分确信再遇到错误时收到这样一个错误信息你并不会感到十分愉快。。。
-
-![image](/images/Fetch/error3.png)
 
 > Yeah… I get it that something went wrong… but what exactly? 🙁
 
@@ -366,8 +356,6 @@ fetch("some-url")
 - 400: Bad request.
 
 是什么造成了一个错误的请求？太多的可能性了！例如，如果你丢失了一些必要的参数，会返回400。
-
-![image](/images/Fetch/error4.png)
 
 > Stripe’s explains it returns a 400 error if the request is missing a required field
 
@@ -431,8 +419,6 @@ fetch("some-url")
 但是，另外的10%怎么办。。。
 
 假如你使用上面的代码去接受XML的响应，你将立即捕获一个错误：
-
-![image](/images/Fetch/failed-text-response.png)
 
 > Parsing an invalid JSON produces a Syntax error
 
