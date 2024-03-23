@@ -1,9 +1,9 @@
 import type { Site, SocialObjects } from "./types";
 
 export const SITE: Site = {
-  website: "https://astro-paper.pages.dev/", // replace this with your deployed domain
-  author: "Sat Naing",
-  desc: "A minimal, responsive and SEO-friendly Astro blog theme.",
+  website: "https://myjdml.github.io/", // replace this with your deployed domain
+  author: "myjdml",
+  desc: "a blog of normal SDE.",
   title: "myjdml's Blog",
   ogImage: "astropaper-og.jpg",
   lightAndDarkMode: true,
