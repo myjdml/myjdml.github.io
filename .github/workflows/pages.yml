@@ -92,7 +92,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.SERVER_USER }}
           REMOTE_BASE_DIR: ${{ vars.SERVER_DIR }}
           BUILD_DIR: site
-          KEEP_RELEASES: "5"
+          KEEP_RELEASES: ${{ vars.KEEP_RELEASES }}
         run: |
           chmod +x ./scripts/deploy_server.sh
           ./scripts/deploy_server.sh
