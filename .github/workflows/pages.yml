@@ -90,7 +90,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.SERVER_HOST }}
           DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
           DEPLOY_USER: ${{ secrets.SERVER_USER }}
-          REMOTE_BASE_DIR: ${{ secrets.SERVER_DIR }}
+          REMOTE_BASE_DIR: ${{ vars.SERVER_DIR }}
           BUILD_DIR: site
           KEEP_RELEASES: "5"
         run: |
