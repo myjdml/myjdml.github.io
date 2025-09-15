@@ -36,6 +36,12 @@ jobs:
         with:
           path: ./dist
 
+      - name: Upload build artifact for server
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: ./dist
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -46,5 +52,49 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy_server:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh
+          if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
+            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${{ secrets.SERVER_PORT }}" "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Deploy to server
+        env:
+          DEPLOY_HOST: ${{ secrets.SERVER_HOST }}
+          DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
+          DEPLOY_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_BASE_DIR: ${{ secrets.SERVER_DIR }}
+          BUILD_DIR: site
+          KEEP_RELEASES: "5"
+        run: |
+          chmod +x ./scripts/deploy_server.sh
+          ./scripts/deploy_server.sh
 
 
