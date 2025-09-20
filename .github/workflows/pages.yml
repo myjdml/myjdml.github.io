@@ -53,7 +53,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  deploy_server:
+  deploy_servers:
     needs: build
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
@@ -73,26 +73,17 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add known hosts
-        run: |
-          mkdir -p ~/.ssh
-          if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
-            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "${{ secrets.SERVER_PORT }}" "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
-          fi
-
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
 
-      - name: Deploy to server
+      - name: Deploy to multiple servers
         env:
-          DEPLOY_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}  # 多个IP用|分割，如: "192.168.1.10|192.168.1.11|192.168.1.12"
           DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
           DEPLOY_USER: ${{ secrets.SERVER_USER }}
           REMOTE_BASE_DIR: ${{ vars.SERVER_DIR }}
           BUILD_DIR: site
-          KEEP_RELEASES: ${{ vars.KEEP_RELEASES }}
+          KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
         run: |
           chmod +x ./scripts/deploy_server.sh
           ./scripts/deploy_server.sh
