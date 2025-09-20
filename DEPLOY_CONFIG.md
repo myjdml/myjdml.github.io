@@ -14,6 +14,7 @@
 - `SERVER_PORT`: SSH 端口 (所有服务器使用相同的端口)
 - `SSH_PRIVATE_KEY`: SSH 私钥 (用于所有服务器)
 - `KNOWN_HOSTS`: SSH known_hosts 内容 (可选，如果不配置会自动扫描)
+  - 获取方法: `ssh-keyscan -p 22 your-domain.com`
 
 ### 2. 在 GitHub Repository 中配置 Variables
 

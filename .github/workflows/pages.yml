@@ -73,6 +73,25 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Add known hosts
+        env:
+          SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}
+          DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
+            echo "Using predefined KNOWN_HOSTS"
+            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          else
+            echo "Scanning host keys for all servers..."
+            IFS='|' read -ra HOSTS <<< "$SERVER_HOSTS"
+            for host in "${HOSTS[@]}"; do
+              echo "Scanning $host:$DEPLOY_PORT..."
+              ssh-keyscan -p "$DEPLOY_PORT" "$host" >> ~/.ssh/known_hosts
+            done
+          fi
+          echo "Known hosts configured successfully"
+
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
 
