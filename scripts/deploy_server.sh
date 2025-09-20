@@ -3,9 +3,10 @@ set -euo pipefail
 
 # 必填环境变量：
 # SERVER_HOSTS (多个IP用|分割), DEPLOY_USER, DEPLOY_PORT, REMOTE_BASE_DIR, BUILD_DIR
-# 可选：KEEP_RELEASES (默认 5)
+# 可选：KEEP_RELEASES (默认 5), REMOTE_APPEND_HOST_PATH=true/false（按域名追加子目录）
 
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
+REMOTE_APPEND_HOST_PATH="${REMOTE_APPEND_HOST_PATH:-false}"
 RELEASE_NAME="release-$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:-manual}"
 
 if [ -z "${SERVER_HOSTS:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PORT:-}" ] || [ -z "${REMOTE_BASE_DIR:-}" ] || [ -z "${BUILD_DIR:-}" ]; then
@@ -37,8 +38,23 @@ SUCCESSFUL_HOSTS=()
 # 部署到每个服务器的函数
 deploy_to_host() {
   local HOST="$1"
-  local REMOTE_RELEASE_DIR="${REMOTE_BASE_DIR%/}/releases/${RELEASE_NAME}"
-  local REMOTE_CURRENT_LINK="${REMOTE_BASE_DIR%/}/current"
+  local NORMALISED_APPEND="${REMOTE_APPEND_HOST_PATH,,}"
+  local HOST_PATH="$HOST"
+
+  if [[ "$NORMALISED_APPEND" == "true" ]]; then
+    HOST_PATH="${HOST//./\/}"
+  else
+    HOST_PATH=""
+  fi
+
+  local REMOTE_BASE_FOR_HOST="${REMOTE_BASE_DIR%/}"
+  if [ -n "$HOST_PATH" ]; then
+    REMOTE_BASE_FOR_HOST="${REMOTE_BASE_FOR_HOST}/${HOST_PATH}"
+  fi
+
+  local REMOTE_RELEASE_ROOT="${REMOTE_BASE_FOR_HOST%/}/releases"
+  local REMOTE_RELEASE_DIR="${REMOTE_RELEASE_ROOT%/}/${RELEASE_NAME}"
+  local REMOTE_CURRENT_LINK="${REMOTE_BASE_FOR_HOST%/}/current"
   
   echo "[${HOST}] Starting deployment..."
   echo "[${HOST}] Uploading build from ${BUILD_DIR} to ${DEPLOY_USER}@${HOST}:${REMOTE_RELEASE_DIR}"
@@ -80,7 +96,7 @@ deploy_to_host() {
   echo "[${HOST}] Cleaning up old releases (keeping ${KEEP_RELEASES})..."
   if ! ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${HOST}" "
     set -e
-    cd '${REMOTE_BASE_DIR%/}/releases'
+    cd '${REMOTE_RELEASE_ROOT}'
     ls -1dt release-* 2>/dev/null | tail -n +$((KEEP_RELEASES+1)) | xargs -r rm -rf --
     echo '[${HOST}] Pruned to keep ${KEEP_RELEASES} releases'
   "; then
@@ -139,5 +155,3 @@ fi
 
 echo ""
 echo "🎉 All deployments completed successfully!"
-
-

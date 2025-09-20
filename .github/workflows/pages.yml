@@ -126,8 +126,8 @@ jobs:
           REMOTE_BASE_DIR: ${{ vars.SERVER_DIR }}
           BUILD_DIR: site
           KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
+          REMOTE_APPEND_HOST_PATH: ${{ vars.SERVER_APPEND_HOST_PATH || 'true' }}
         run: |
           chmod +x ./scripts/deploy_server.sh
           ./scripts/deploy_server.sh
-
 
