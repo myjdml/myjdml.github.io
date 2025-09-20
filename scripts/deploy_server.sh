@@ -45,8 +45,14 @@ deploy_to_host() {
   
   # 1) 确保远端目录存在
   echo "[${HOST}] Creating remote directory structure..."
+  echo "[${HOST}] Debug: ssh -p ${DEPLOY_PORT} -o StrictHostKeyChecking=yes ${DEPLOY_USER}@${HOST}"
+  echo "[${HOST}] Known hosts content:"
+  grep "${HOST}" ~/.ssh/known_hosts || echo "[${HOST}] No known_hosts entry found!"
+  
   if ! ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${HOST}" "mkdir -p '${REMOTE_RELEASE_DIR}'"; then
     echo "[${HOST}] Failed to create remote directory" >&2
+    echo "[${HOST}] SSH debug info:"
+    ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=yes -v "${DEPLOY_USER}@${HOST}" "echo 'test'" 2>&1 || true
     return 1
   fi
   

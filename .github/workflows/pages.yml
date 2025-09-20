@@ -74,22 +74,45 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add known hosts
-        env:
-          SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}
-          DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
         run: |
           mkdir -p ~/.ssh
+          
+          echo "=== Debug Info ==="
+          echo "SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}"
+          echo "DEPLOY_PORT: ${{ secrets.SERVER_PORT }}"
+          echo "KNOWN_HOSTS configured: ${{ secrets.KNOWN_HOSTS != '' }}"
+          echo "=================="
+          
           if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
             echo "Using predefined KNOWN_HOSTS"
             echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
           else
             echo "Scanning host keys for all servers..."
+            SERVER_HOSTS="${{ secrets.SERVER_HOSTS }}"
+            DEPLOY_PORT="${{ secrets.SERVER_PORT || '22' }}"
+            
+            if [ -z "$SERVER_HOSTS" ]; then
+              echo "ERROR: SERVER_HOSTS is empty!"
+              exit 1
+            fi
+            
             IFS='|' read -ra HOSTS <<< "$SERVER_HOSTS"
             for host in "${HOSTS[@]}"; do
-              echo "Scanning $host:$DEPLOY_PORT..."
-              ssh-keyscan -p "$DEPLOY_PORT" "$host" >> ~/.ssh/known_hosts
+              if [ -n "$host" ]; then
+                echo "Scanning $host:$DEPLOY_PORT..."
+                ssh-keyscan -p "$DEPLOY_PORT" "$host" >> ~/.ssh/known_hosts 2>/dev/null || {
+                  echo "Warning: Failed to scan $host, trying without port..."
+                  ssh-keyscan "$host" >> ~/.ssh/known_hosts 2>/dev/null || {
+                    echo "ERROR: Could not scan $host"
+                  }
+                }
+              fi
             done
           fi
+          
+          echo "=== Known hosts file content ==="
+          cat ~/.ssh/known_hosts
+          echo "================================"
           echo "Known hosts configured successfully"
 
       - name: Install rsync
