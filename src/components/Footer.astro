@@ -1,6 +1,7 @@
 ---
 import Hr from "./Hr.astro";
 import Socials from "./Socials.astro";
+import { SITE } from "../config";
 
 const currentYear = new Date().getFullYear();
 
@@ -9,6 +10,16 @@ export interface Props {
 }
 
 const { noMarginTop = false } = Astro.props;
+const requestHost = Astro.request?.headers
+  .get("host")
+  ?.replace(/:\d+$/, "");
+const siteHost = Astro.site?.hostname ?? new URL(SITE.website).hostname;
+const hostname = requestHost ?? siteHost;
+const showIcp = hostname === "myjdml.top";
+const icp = {
+  href: "https://placeholder.example",
+  text: "备案号占位",
+};
 ---
 
 <footer class={`${noMarginTop ? "" : "mt-auto"}`}>
@@ -18,7 +29,18 @@ const { noMarginTop = false } = Astro.props;
     <div class="copyright-wrapper">
       <span>Copyright &#169; {currentYear}</span>
       <span class="separator">&nbsp;|&nbsp;</span>
-      <span>All rights reserved.</span>
+      {showIcp ? (
+        <a
+          class="legal-text"
+          href={icp.href}
+          target="_blank"
+          rel="noopener"
+        >
+          {icp.text}
+        </a>
+      ) : (
+        <span class="legal-text">All rights reserved.</span>
+      )}
     </div>
   </div>
 </footer>
