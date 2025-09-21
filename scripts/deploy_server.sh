@@ -35,6 +35,33 @@ echo ""
 FAILED_HOSTS=()
 SUCCESSFUL_HOSTS=()
 
+reverse_domain_segments() {
+  local RAW_HOST="$1"
+  local HOST_PART="${RAW_HOST%%:*}"
+
+  if [[ "$HOST_PART" == "" ]]; then
+    echo ""
+    return
+  fi
+
+  IFS='.' read -ra SEGMENTS <<< "$HOST_PART"
+
+  if [ ${#SEGMENTS[@]} -le 1 ]; then
+    echo "$HOST_PART"
+    return
+  fi
+
+  local REVERSED=()
+  for (( idx=${#SEGMENTS[@]}-1; idx>=0; idx-- )); do
+    local part="${SEGMENTS[$idx]}"
+    if [ -n "$part" ]; then
+      REVERSED+=("$part")
+    fi
+  done
+
+  (IFS='/'; echo "${REVERSED[*]}")
+}
+
 # 部署到每个服务器的函数
 deploy_to_host() {
   local HOST="$1"
@@ -42,7 +69,7 @@ deploy_to_host() {
   local HOST_PATH="$HOST"
 
   if [[ "$NORMALISED_APPEND" == "true" ]]; then
-    HOST_PATH="${HOST//./\/}"
+    HOST_PATH="$(reverse_domain_segments "$HOST")"
   else
     HOST_PATH=""
   fi
