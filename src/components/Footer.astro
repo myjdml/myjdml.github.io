@@ -1,7 +1,7 @@
 ---
 import Hr from "./Hr.astro";
 import Socials from "./Socials.astro";
-import { SITE } from "../config";
+import { SITE, SITE_LINE } from "../config";
 
 const currentYear = new Date().getFullYear();
 
@@ -10,12 +10,14 @@ export interface Props {
 }
 
 const { noMarginTop = false } = Astro.props;
-const requestHost = Astro.request?.headers
-  .get("host")
-  ?.replace(/:\d+$/, "");
+const requestHost = Astro.request?.headers.get("host")?.replace(/:\d+$/, "");
 const siteHost = Astro.site?.hostname ?? new URL(SITE.website).hostname;
 const hostname = requestHost ?? siteHost;
-const showIcp = hostname === "myjdml.top";
+const effectiveSiteLine =
+  SITE_LINE === "domestic" || hostname === "myjdml.top"
+    ? "domestic"
+    : "overseas";
+const showIcp = effectiveSiteLine === "domestic";
 const icp = {
   href: "https://beian.miit.gov.cn",
   text: "皖ICP备2025098756号-1",
@@ -24,6 +26,7 @@ const publicSecurity = {
   href: "https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=",
   text: "",
 };
+const showPublicSecurity = showIcp && Boolean(publicSecurity.text);
 ---
 
 <footer class={`${noMarginTop ? "" : "mt-auto"}`}>
@@ -33,29 +36,35 @@ const publicSecurity = {
     <div class="copyright-wrapper">
       <span>Copyright &#169; {currentYear}</span>
       <span class="separator">&nbsp;|&nbsp;</span>
-      {showIcp ? (
-        <>
-          <a
-            class="legal-text"
-            href={icp.href}
-            target="_blank"
-            rel="noopener"
-          >
-            {icp.text}
-          </a>
-          <span class="separator">&nbsp;|&nbsp;</span>
-          <a
-            class="legal-text"
-            href={publicSecurity.href}
-            target="_blank"
-            rel="noopener"
-          >
-            公安备案号{publicSecurity.text}
-          </a>
-        </>
-      ) : (
-        <span class="legal-text">All rights reserved.</span>
-      )}
+      {
+        showIcp ? (
+          <>
+            <a
+              class="legal-text"
+              href={icp.href}
+              target="_blank"
+              rel="noopener"
+            >
+              {icp.text}
+            </a>
+            {showPublicSecurity && (
+              <>
+                <span class="separator">&nbsp;|&nbsp;</span>
+                <a
+                  class="legal-text"
+                  href={`${publicSecurity.href}${publicSecurity.text}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  公安备案号{publicSecurity.text}
+                </a>
+              </>
+            )}
+          </>
+        ) : (
+          <span class="legal-text">All rights reserved.</span>
+        )
+      }
     </div>
   </div>
 </footer>

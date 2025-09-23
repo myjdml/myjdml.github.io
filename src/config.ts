@@ -1,7 +1,22 @@
 import type { Site, SocialObjects } from "./types";
 
+const SITE_LINES = ["overseas", "domestic"] as const;
+type SiteLine = (typeof SITE_LINES)[number];
+
+const resolveSiteLine = (): SiteLine => {
+  const rawValue = import.meta.env.PUBLIC_SITE_LINE;
+  return rawValue === "domestic" ? "domestic" : "overseas";
+};
+
+export const SITE_LINE = resolveSiteLine();
+
+const WEBSITE_BY_LINE: Record<SiteLine, string> = {
+  overseas: "https://myjdml.site/",
+  domestic: "https://myjdml.top/",
+};
+
 export const SITE: Site = {
-  website: "https://myjdml.github.io/", // replace this with your deployed domain
+  website: WEBSITE_BY_LINE[SITE_LINE],
   author: "myjdml",
   desc: "a blog of normal SDE.",
   title: "myjdml's Blog",
