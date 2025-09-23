@@ -20,7 +20,7 @@
     "format:check": "prettier --check . --plugin=prettier-plugin-astro",
     "format": "prettier --write . --plugin=prettier-plugin-astro",
     "cz": "cz",
-    "prepare": "husky install",
+    "prepare": "husky install && patch-package",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -50,6 +50,7 @@
     "commitizen": "^4.3.0",
     "cross-env": "^7.0.3",
     "cz-conventional-changelog": "^3.3.0",
+    "patch-package": "^8.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-astro": "^0.31.3",
     "husky": "^8.0.3",

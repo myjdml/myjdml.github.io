@@ -10,11 +10,9 @@ export interface Props {
 }
 
 const { noMarginTop = false } = Astro.props;
-const requestHost = Astro.request?.headers.get("host")?.replace(/:\d+$/, "");
 const siteHost = Astro.site?.hostname ?? new URL(SITE.website).hostname;
-const hostname = requestHost ?? siteHost;
 const effectiveSiteLine =
-  SITE_LINE === "domestic" || hostname === "myjdml.top"
+  SITE_LINE === "domestic" || siteHost === "myjdml.top"
     ? "domestic"
     : "overseas";
 const showIcp = effectiveSiteLine === "domestic";
