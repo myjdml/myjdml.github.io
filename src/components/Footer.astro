@@ -1,7 +1,7 @@
 ---
 import Hr from "./Hr.astro";
 import Socials from "./Socials.astro";
-import { SITE, SITE_LINE } from "../config";
+import { SITE_LINE } from "../config";
 
 const currentYear = new Date().getFullYear();
 
@@ -10,12 +10,10 @@ export interface Props {
 }
 
 const { noMarginTop = false } = Astro.props;
-const siteHost = Astro.site?.hostname ?? new URL(SITE.website).hostname;
-const effectiveSiteLine =
-  SITE_LINE === "domestic" || siteHost === "myjdml.top"
-    ? "domestic"
-    : "overseas";
-const showIcp = effectiveSiteLine === "domestic";
+const runtimeHostname = Astro.request
+  ? new URL(Astro.request.url).hostname
+  : Astro.url.hostname;
+const showIcp = SITE_LINE === "domestic" || runtimeHostname === "myjdml.top";
 const icp = {
   href: "https://beian.miit.gov.cn",
   text: "皖ICP备2025098756号-1",
