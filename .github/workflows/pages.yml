@@ -33,8 +33,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm run build
+      - name: Build (domestic)
+        run: pnpm run build:cn
+
+      - name: Move domestic build
+        run: mv dist dist-cn
+
+      - name: Build (overseas)
+        run: pnpm run build:overseas
+
+      - name: Prepare deployment artifacts
+        run: |
+          rm -rf site-artifacts
+          mkdir -p site-artifacts/cn site-artifacts/overseas
+          cp -R dist-cn/. site-artifacts/cn/
+          cp -R dist/. site-artifacts/overseas/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -45,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: site
-          path: ./dist
+          path: site-artifacts
 
   deploy:
     needs: build
@@ -133,5 +146,26 @@ jobs:
           KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
           REMOTE_APPEND_HOST_PATH: ${{ vars.SERVER_APPEND_HOST_PATH || 'true' }}
         run: |
+          set -euo pipefail
           chmod +x ./scripts/deploy_server.sh
-          ./scripts/deploy_server.sh
+
+          IFS='|' read -ra HOSTS <<< "${SERVER_HOSTS:-}"
+
+          if [ ${#HOSTS[@]} -eq 0 ]; then
+            echo "No hosts configured, skipping deployment"
+            exit 0
+          fi
+
+          for host in "${HOSTS[@]}"; do
+            if [ -z "$host" ]; then
+              continue
+            fi
+
+            BUILD_DIR="site/overseas"
+            if [[ "$host" == *"myjdml.top"* ]]; then
+              BUILD_DIR="site/cn"
+            fi
+
+            echo "Deploying to $host using build directory: $BUILD_DIR"
+            SERVER_HOSTS="$host" BUILD_DIR="$BUILD_DIR" ./scripts/deploy_server.sh
+          done
