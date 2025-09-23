@@ -17,8 +17,12 @@ const siteHost = Astro.site?.hostname ?? new URL(SITE.website).hostname;
 const hostname = requestHost ?? siteHost;
 const showIcp = hostname === "myjdml.top";
 const icp = {
-  href: "https://placeholder.example",
-  text: "备案号占位",
+  href: "https://beian.miit.gov.cn",
+  text: "皖ICP备2025098756号-1",
+};
+const publicSecurity = {
+  href: "https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=",
+  text: "",
 };
 ---
 
@@ -30,14 +34,25 @@ const icp = {
       <span>Copyright &#169; {currentYear}</span>
       <span class="separator">&nbsp;|&nbsp;</span>
       {showIcp ? (
-        <a
-          class="legal-text"
-          href={icp.href}
-          target="_blank"
-          rel="noopener"
-        >
-          {icp.text}
-        </a>
+        <>
+          <a
+            class="legal-text"
+            href={icp.href}
+            target="_blank"
+            rel="noopener"
+          >
+            {icp.text}
+          </a>
+          <span class="separator">&nbsp;|&nbsp;</span>
+          <a
+            class="legal-text"
+            href={publicSecurity.href}
+            target="_blank"
+            rel="noopener"
+          >
+            公安备案号{publicSecurity.text}
+          </a>
+        </>
       ) : (
         <span class="legal-text">All rights reserved.</span>
       )}
