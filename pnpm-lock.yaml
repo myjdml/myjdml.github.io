@@ -11,6 +11,9 @@ importers:
       '@astrojs/check':
         specifier: ^0.5.9
         version: 0.5.10(prettier-plugin-astro@0.13.0)(prettier@3.6.2)(typescript@5.9.2)
+      '@astrojs/internal-helpers':
+        specifier: ^0.7.3
+        version: 0.7.3
       '@astrojs/rss':
         specifier: ^4.0.2
         version: 4.0.12
@@ -129,6 +132,9 @@ packages:
 
   '@astrojs/internal-helpers@0.4.1':
     resolution: {integrity: sha512-bMf9jFihO8YP940uD70SI/RDzIhUHJAolWVcO1v5PUivxGKvfLZTLTVVxEYzGYyPsA3ivdLNqMnL5VgmQySa+g==}
+
+  '@astrojs/internal-helpers@0.7.3':
+    resolution: {integrity: sha512-6Pl0bQEIChuW5wqN7jdKrzWfCscW2rG/Cz+fzt4PhSQX2ivBpnhXgFUCs0M3DCYvjYHnPVG2W36X5rmFjZ62sw==}
 
   '@astrojs/language-server@2.15.4':
     resolution: {integrity: sha512-JivzASqTPR2bao9BWsSc/woPHH7OGSGc9aMxXL4U6egVTqBycB3ZHdBJPuOCVtcGLrzdWTosAqVPz1BVoxE0+A==}
@@ -4001,6 +4007,8 @@ snapshots:
   '@astrojs/compiler@2.12.2': {}
 
   '@astrojs/internal-helpers@0.4.1': {}
+
+  '@astrojs/internal-helpers@0.7.3': {}
 
   '@astrojs/language-server@2.15.4(prettier-plugin-astro@0.13.0)(prettier@3.6.2)(typescript@5.9.2)':
     dependencies:
