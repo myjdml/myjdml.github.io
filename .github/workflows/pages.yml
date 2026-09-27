@@ -150,6 +150,7 @@ jobs:
           chmod +x ./scripts/deploy_server.sh
 
           IFS='|' read -ra HOSTS <<< "${SERVER_HOSTS:-}"
+          FAILED_HOSTS=()
 
           if [ ${#HOSTS[@]} -eq 0 ]; then
             echo "No hosts configured, skipping deployment"
@@ -167,5 +168,15 @@ jobs:
             fi
 
             echo "Deploying to $host using build directory: $BUILD_DIR"
-            SERVER_HOSTS="$host" BUILD_DIR="$BUILD_DIR" ./scripts/deploy_server.sh
+            if SERVER_HOSTS="$host" BUILD_DIR="$BUILD_DIR" ./scripts/deploy_server.sh; then
+              echo "Deployment succeeded for $host"
+            else
+              echo "Deployment failed for $host; continuing with remaining hosts" >&2
+              FAILED_HOSTS+=("$host")
+            fi
           done
+
+          if [ ${#FAILED_HOSTS[@]} -gt 0 ]; then
+            echo "Deployment failed for: ${FAILED_HOSTS[*]}" >&2
+            exit 1
+          fi
