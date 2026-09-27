@@ -3,7 +3,7 @@ author: myjdml
 pubDatetime: 2024-03-18T18:16:44.000Z
 title: 从GO开始，了解协程
 slug: "go-coroutine"
-featured: true
+featured: false
 craft: true
 tags:
   - GO
