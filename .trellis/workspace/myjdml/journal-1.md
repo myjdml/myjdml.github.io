@@ -27,3 +27,25 @@ Scanned the Astro blog architecture and populated .trellis/spec/frontend with so
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: Add independent Journal content area
+<!-- trellis-session: v=2 fp=803031f1690aaa66 -->
+
+**Date**: 2026-09-28
+**Task**: Add independent Journal content area
+**Branch**: `feat/infra`
+
+### Summary
+
+Implemented the independent Journal collection, /journal routes, navigation divider, shared rendering, Search/RSS integration, OG endpoint, spec updates, and validation. Astro check and lint passed; builds were blocked by the existing remote font DNS failure, and full format check still reports three pre-existing files.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b1ab9c1` | feat: add independent journal content |
+
+### Status
+
+[OK] **Completed**
