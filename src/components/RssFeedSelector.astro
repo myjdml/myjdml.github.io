@@ -39,58 +39,181 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
     <span>RSS</span>
   </a>
   <span class="rss-separator" aria-hidden="true">·</span>
-  <span class="rss-choice">
-    <select aria-label="Choose RSS feed" title="Choose RSS feed" data-rss-feed>
+  <div class="rss-dropdown">
+    <button
+      type="button"
+      class="rss-trigger"
+      data-rss-trigger
+      aria-haspopup="listbox"
+      aria-expanded="false"
+      aria-label="Choose RSS feed"
+    >
+      <span data-rss-current>{selectedFeed.label}</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="chevron"
+        viewBox="0 0 24 24"
+        aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg
+      >
+    </button>
+    <ul
+      class="rss-menu"
+      role="listbox"
+      aria-label="RSS feeds"
+      data-rss-menu
+      hidden
+    >
       {
         feeds.map(feed => (
-          <option
-            value={feed.id}
-            data-href={feed.href}
-            selected={feed.id === selectedFeed.id}
-          >
-            {feed.label}
-          </option>
+          <li>
+            <button
+              type="button"
+              class="rss-option"
+              role="option"
+              tabindex="-1"
+              data-rss-option
+              data-href={feed.href}
+              aria-selected={feed.id === selectedFeed.id ? "true" : "false"}
+            >
+              {feed.label}
+            </button>
+          </li>
         ))
       }
-    </select>
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="chevron"
-      viewBox="0 0 24 24"
-      aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg
-    >
-  </span>
+    </ul>
+  </div>
 </div>
 
 <script>
-  const initializedSelects = new WeakSet();
+  const initializedSelectors = new WeakSet();
+  let outsideClickBound = false;
 
   function setupRssSelectors() {
     document.querySelectorAll("[data-rss-selector]").forEach(selector => {
-      const select =
-        selector.querySelector<HTMLSelectElement>("[data-rss-feed]");
-      const link = selector.querySelector<HTMLAnchorElement>("[data-rss-link]");
+      if (initializedSelectors.has(selector)) return;
+      initializedSelectors.add(selector);
 
-      if (!select || !link) return;
+      const link = selector.querySelector("[data-rss-link]");
+      const trigger = selector.querySelector("[data-rss-trigger]");
+      const menu = selector.querySelector("[data-rss-menu]");
+      const current = selector.querySelector("[data-rss-current]");
+      const options = Array.from(
+        selector.querySelectorAll("[data-rss-option]")
+      );
 
-      const feedSelect = select;
+      if (!link || !trigger || !menu || !current || options.length === 0)
+        return;
+
       const rssLink = link;
+      const rssTrigger = trigger;
+      const rssMenu = menu;
+      const currentLabel = current;
 
-      function updateFeed() {
-        const option = feedSelect.selectedOptions[0];
-        if (!option?.dataset.href) return;
+      const isOpen = () => rssTrigger.getAttribute("aria-expanded") === "true";
 
-        const label = `Subscribe to ${option.text} via RSS (opens in a new tab)`;
-        rssLink.href = option.dataset.href;
-        rssLink.setAttribute("aria-label", label);
-        rssLink.title = label;
+      function openMenu() {
+        if (isOpen()) return;
+        rssMenu.hidden = false;
+        rssTrigger.setAttribute("aria-expanded", "true");
+        const selected =
+          options.find(opt => opt.getAttribute("aria-selected") === "true") ??
+          options[0];
+        selected.focus();
       }
 
-      updateFeed();
+      function closeMenu(restoreFocus = false) {
+        if (!isOpen()) return;
+        rssMenu.hidden = true;
+        rssTrigger.setAttribute("aria-expanded", "false");
+        if (restoreFocus) rssTrigger.focus();
+      }
 
-      if (!initializedSelects.has(feedSelect)) {
-        feedSelect.addEventListener("change", updateFeed);
-        initializedSelects.add(feedSelect);
+      function selectOption(option) {
+        options.forEach(opt =>
+          opt.setAttribute("aria-selected", opt === option ? "true" : "false")
+        );
+        currentLabel.textContent = option.textContent;
+
+        if (option.dataset.href) {
+          const label = `Subscribe to ${option.textContent} via RSS (opens in a new tab)`;
+          rssLink.href = option.dataset.href;
+          rssLink.setAttribute("aria-label", label);
+          rssLink.title = label;
+        }
+
+        closeMenu(true);
+      }
+
+      function moveFocus(from, delta) {
+        const index = options.indexOf(from);
+        const next = options[(index + delta + options.length) % options.length];
+        next.focus();
+      }
+
+      rssTrigger.addEventListener("click", () =>
+        isOpen() ? closeMenu(true) : openMenu()
+      );
+
+      rssTrigger.addEventListener("keydown", event => {
+        if (event.key === "ArrowDown" || event.key === "Enter") {
+          event.preventDefault();
+          openMenu();
+        }
+      });
+
+      options.forEach(option => {
+        option.addEventListener("click", () => selectOption(option));
+      });
+
+      rssMenu.addEventListener("keydown", event => {
+        const focused = document.activeElement;
+        if (!focused || !options.includes(focused)) return;
+
+        switch (event.key) {
+          case "ArrowDown":
+            event.preventDefault();
+            moveFocus(focused, 1);
+            break;
+          case "ArrowUp":
+            event.preventDefault();
+            moveFocus(focused, -1);
+            break;
+          case "Home":
+            event.preventDefault();
+            options[0].focus();
+            break;
+          case "End":
+            event.preventDefault();
+            options[options.length - 1].focus();
+            break;
+          case "Enter":
+          case " ":
+            event.preventDefault();
+            selectOption(focused);
+            break;
+          case "Escape":
+            event.preventDefault();
+            closeMenu(true);
+            break;
+          case "Tab":
+            closeMenu();
+            break;
+        }
+      });
+
+      if (!outsideClickBound) {
+        outsideClickBound = true;
+        document.addEventListener("click", event => {
+          document.querySelectorAll("[data-rss-selector]").forEach(sel => {
+            if (sel.contains(event.target)) return;
+            const trig = sel.querySelector("[data-rss-trigger]");
+            const m = sel.querySelector("[data-rss-menu]");
+            if (trig && m) {
+              m.hidden = true;
+              trig.setAttribute("aria-expanded", "false");
+            }
+          });
+        });
       }
     });
   }
@@ -111,29 +234,25 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
     font-weight: 600;
   }
 
-  .rss-link,
-  select {
-    min-height: 2.75rem;
-    border-radius: 0.5rem;
-    color: inherit;
-    transition: background-color 150ms ease;
-  }
-
   .rss-link {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.35rem 0.5rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 0.375rem;
+    color: inherit;
     text-decoration: none;
+    transition: background-color 150ms ease;
   }
 
   .rss-link:hover,
-  select:hover {
+  .rss-trigger:hover {
     background: color-mix(in srgb, rgb(var(--color-accent)) 10%, transparent);
   }
 
   .rss-link:focus-visible,
-  select:focus-visible {
+  .rss-trigger:focus-visible,
+  .rss-option:focus-visible {
     outline: 2px solid rgb(var(--color-accent));
     outline-offset: 2px;
   }
@@ -145,46 +264,91 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
   }
 
   .rss-separator {
-    padding: 0 0.1rem;
+    padding: 0 0.15rem;
   }
 
-  .rss-choice {
+  .rss-dropdown {
     position: relative;
     display: inline-flex;
-    align-items: center;
   }
 
-  select {
-    width: calc(7ch + 2.25rem);
-    appearance: none;
+  .rss-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.3rem;
     border: 0;
+    border-radius: 0.375rem;
     background: transparent;
-    padding: 0.35rem 1.75rem 0.35rem 0.5rem;
+    color: inherit;
     font: inherit;
     cursor: pointer;
+    transition: background-color 150ms ease;
   }
 
-  option {
-    background: rgb(var(--color-fill));
-    color: rgb(var(--color-text-base));
+  .rss-trigger[aria-expanded="true"] {
+    background: color-mix(in srgb, rgb(var(--color-accent)) 10%, transparent);
   }
 
   .chevron {
-    position: absolute;
-    right: 0.4rem;
-    width: 1rem;
-    height: 1rem;
-    pointer-events: none;
+    width: 0.9rem;
+    height: 0.9rem;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2;
+    transition: transform 150ms ease;
+  }
+
+  .rss-trigger[aria-expanded="true"] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .rss-menu {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 20;
+    min-width: 100%;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    border: 1px solid rgb(var(--color-border));
+    border-radius: 0.5rem;
+    background: rgb(var(--color-fill));
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .rss-option {
+    display: block;
+    width: 100%;
+    padding: 0.3rem 0.6rem;
+    border: 0;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: rgb(var(--color-text-base));
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .rss-option:hover,
+  .rss-option:focus-visible {
+    background: color-mix(in srgb, rgb(var(--color-accent)) 10%, transparent);
+  }
+
+  .rss-option[aria-selected="true"] {
+    color: rgb(var(--color-accent));
+    font-weight: 600;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .rss-link,
-    select {
+    .rss-trigger,
+    .chevron {
       transition: none;
     }
   }
