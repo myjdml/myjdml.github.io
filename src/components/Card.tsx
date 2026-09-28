@@ -40,7 +40,7 @@ export default function Card({
         )}
       </a>
       <Datetime pubDatetime={pubDatetime} modDatetime={modDatetime} />
-      <p>{description}</p>
+      {description && <p>{description}</p>}
     </li>
   );
 }

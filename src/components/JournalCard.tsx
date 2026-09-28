@@ -16,7 +16,7 @@ export default function JournalCard({
   body,
   secHeading = true,
 }: Props) {
-  const { title, pubDatetime, modDatetime } = frontmatter;
+  const { title, pubDatetime, modDatetime, description } = frontmatter;
 
   const headerProps = {
     style: { viewTransitionName: slugifyStr(title) },
@@ -36,7 +36,8 @@ export default function JournalCard({
         )}
       </a>
       <Datetime pubDatetime={pubDatetime} modDatetime={modDatetime} />
-      <p className="line-clamp-3">{getContentExcerpt(body)}</p>
+      {description && <p className="text-sm opacity-70">{description}</p>}
+      <p className="mt-1 line-clamp-3">{getContentExcerpt(body)}</p>
     </li>
   );
 }

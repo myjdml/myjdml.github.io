@@ -21,6 +21,15 @@ const schema = ({ image }: SchemaContext) =>
   });
 
 const blog = defineCollection({ type: "content", schema });
-const journal = defineCollection({ type: "content", schema });
+const journal = defineCollection({
+  type: "content",
+  schema: context =>
+    schema(context).extend({
+      description: z
+        .string()
+        .nullish()
+        .transform(value => value?.trim() || undefined),
+    }),
+});
 
 export const collections = { blog, journal };

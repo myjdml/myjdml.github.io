@@ -5,7 +5,7 @@ import type { ContentCollection, ContentEntry } from "../types";
 
 export type SearchItem = {
   title: string;
-  description: string;
+  description?: string;
   data: ContentEntry["data"];
   slug: string;
   collection: ContentCollection;
