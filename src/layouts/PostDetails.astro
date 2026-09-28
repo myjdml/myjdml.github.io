@@ -4,16 +4,17 @@ import Header from "@components/Header.astro";
 import Footer from "@components/Footer.astro";
 import Tag from "@components/Tag.astro";
 import Datetime from "@components/Datetime";
-import type { CollectionEntry } from "astro:content";
+import type { ContentEntry } from "../types";
 import { slugifyStr } from "@utils/slugify";
 import ShareLinks from "@components/ShareLinks.astro";
 import { SITE } from "@config";
 
 export interface Props {
-  post: CollectionEntry<"blog">;
+  post: ContentEntry;
 }
 
 const { post } = Astro.props;
+const isJournal = post.collection === "journal";
 
 const {
   title,
@@ -30,7 +31,7 @@ const { Content } = await post.render();
 
 const ogImageUrl = typeof ogImage === "string" ? ogImage : ogImage?.src;
 const ogUrl = new URL(
-  ogImageUrl ?? `/posts/${slugifyStr(title)}.png`,
+  ogImageUrl ?? `/${isJournal ? "journal" : "posts"}/${slugifyStr(title)}.png`,
   Astro.url.origin
 ).href;
 
@@ -47,7 +48,7 @@ const layoutProps = {
 ---
 
 <Layout {...layoutProps}>
-  <Header />
+  <Header activeNav={isJournal ? "journal" : "posts"} />
 
   <!-- <div class="progress-container fixed top-0 z-10 h-1 w-full bg-skin-fill">
     <div class="progress-bar h-1 w-0 bg-skin-accent" id="myBar"></div>
@@ -77,9 +78,15 @@ const layoutProps = {
       <Content />
     </article>
 
-    <ul class="my-8">
-      {tags.map(tag => <Tag tag={slugifyStr(tag)} />)}
-    </ul>
+    {
+      !isJournal && (
+        <ul class="my-8">
+          {tags.map(tag => (
+            <Tag tag={slugifyStr(tag)} />
+          ))}
+        </ul>
+      )
+    }
 
     <div
       class="flex flex-col-reverse items-center justify-between gap-6 sm:flex-row-reverse sm:items-end sm:gap-4"

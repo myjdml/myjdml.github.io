@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines the required static checks, dual builds, route/content validation, accessibility review, and forbidden patterns."}
+{"file":".trellis/spec/frontend/architecture.md","reason":"Checks that Journal remains isolated from blog-only surfaces while shared collection flow stays one-directional."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Checks navigation semantics, keyboard focus, divider accessibility, and shared component boundaries."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Checks strict collection union typing and schema-backed frontmatter without broad assertions."}

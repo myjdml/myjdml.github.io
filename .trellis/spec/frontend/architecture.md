@@ -1,15 +1,15 @@
 # Project Architecture
 
 This repository is a single Astro 4 static blog. The source of truth for
-published content is the blog content collection; pages, layouts, and
-components turn that collection into static HTML and a small set of generated
-assets and feeds.
+published content is the `blog` and `journal` content collections; pages,
+layouts, and components turn those collections into static HTML and a small set
+of generated assets and feeds.
 
 ## Runtime Shape
 
 | Area | Responsibility | Representative files |
 | --- | --- | --- |
-| Content | Markdown posts and their validated frontmatter | src/content/blog/*.md, src/content/config.ts |
+| Content | Markdown posts and Journal records with validated frontmatter | src/content/blog/*.md, src/content/journal/*.md, src/content/config.ts |
 | Routes | Static pages, dynamic post/tag routes, and endpoint responses | src/pages/, src/pages/posts/[slug]/, src/pages/tags/[tag]/ |
 | Layouts | Page shells and data-to-view composition | src/layouts/Layout.astro, Posts.astro, PostDetails.astro, TagPosts.astro |
 | Components | Reusable Astro markup plus server-rendered React components | src/components/, src/components/Card.tsx, Search.tsx |
@@ -23,12 +23,15 @@ shape unless the product requirement explicitly introduces a new runtime.
 
 ## Content-to-Page Flow
 
-1. A route calls getCollection("blog") to load typed CollectionEntry<"blog">
-   values.
+1. A route calls `getCollection("blog")` or `getCollection("journal")` to load
+   typed collection entries. Shared list/detail code accepts the closed
+   `ContentEntry = CollectionEntry<"blog"> | CollectionEntry<"journal">`
+   union, while collection-specific routes decide the URL prefix.
 2. getSortedPosts applies postFilter (draft and scheduled-publication rules)
    and sorts by modification date, falling back to publication date.
-3. getPostsByTag, getUniqueTags, and getPagination derive route-specific views
-   without owning presentation markup.
+3. getPostsByTag and getUniqueTags remain blog-only tag derivations; getPagination
+   derives route-specific pages for either collection without owning presentation
+   markup.
 4. Route files pass small, typed props to layouts such as Posts or PostDetails;
    layouts compose Layout, Header, Footer, and leaf components.
 5. Layout.astro owns document metadata, canonical URLs, Open Graph/Twitter
@@ -38,6 +41,11 @@ Keep this flow one-directional. Do not query content from a leaf component or
 duplicate filtering rules in markup. src/pages/search.astro is the one
 intentional exception where a route builds a serializable search list for the
 SearchBar client island.
+
+Journal entries may be included in Search and RSS only when the collection
+identity is preserved: Search items carry a `collection` discriminator and
+Journal cards display a `Journal` label; RSS items use a `journal/<slug>/` link
+and `Journal` category. Homepage, Posts, and Tags remain blog-only.
 
 ## Build Variants and Deployment
 

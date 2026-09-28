@@ -4,7 +4,7 @@ import Hr from "./Hr.astro";
 import LinkButton from "./LinkButton.astro";
 
 export interface Props {
-  activeNav?: "posts" | "tags" | "about" | "search";
+  activeNav?: "posts" | "tags" | "about" | "search" | "journal";
 }
 
 const { activeNav } = Astro.props;
@@ -69,6 +69,12 @@ const { activeNav } = Astro.props;
             <a href="/about/" class={activeNav === "about" ? "active" : ""}>
               About
             </a>
+          </li>
+          <li class="journal-item">
+            <a href="/journal/" class={activeNav === "journal" ? "active" : ""}>
+              Journal
+            </a>
+            <span class="nav-divider" aria-hidden="true"></span>
           </li>
           <li>
             <LinkButton
@@ -150,6 +156,12 @@ const { activeNav } = Astro.props;
   }
   nav ul li:nth-last-child(2) a {
     @apply w-auto;
+  }
+  .journal-item {
+    @apply gap-2;
+  }
+  .nav-divider {
+    @apply hidden h-5 border-l border-skin-line sm:block;
   }
   nav ul li:nth-last-child(1),
   nav ul li:nth-last-child(2) {

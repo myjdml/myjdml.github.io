@@ -1,14 +1,20 @@
 import { slugifyStr } from "../utils/slugify";
 import Datetime from "./Datetime";
-import type { CollectionEntry } from "astro:content";
+import type { ContentEntry } from "../types";
 
 export interface Props {
   href?: string;
-  frontmatter: CollectionEntry<"blog">["data"];
+  frontmatter: ContentEntry["data"];
   secHeading?: boolean;
+  typeLabel?: string;
 }
 
-export default function Card({ href, frontmatter, secHeading = true }: Props) {
+export default function Card({
+  href,
+  frontmatter,
+  secHeading = true,
+  typeLabel,
+}: Props) {
   const { title, pubDatetime, modDatetime, description } = frontmatter;
 
   const headerProps = {
@@ -18,6 +24,11 @@ export default function Card({ href, frontmatter, secHeading = true }: Props) {
 
   return (
     <li className="my-6">
+      {typeLabel && (
+        <span className="mb-1 block text-sm uppercase tracking-wide opacity-70">
+          {typeLabel}
+        </span>
+      )}
       <a
         href={href}
         className="inline-block text-lg font-medium text-skin-accent decoration-dashed underline-offset-4 focus-visible:no-underline focus-visible:underline-offset-0"

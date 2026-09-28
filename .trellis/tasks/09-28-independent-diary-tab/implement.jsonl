@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/architecture.md","reason":"Defines the Astro content-to-route flow, collection boundaries, shared layouts, and dual build constraints for implementing Journal."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Defines expected locations and naming for the new collection, routes, layouts, and utilities."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Defines typed props, Header accessibility, Card composition, and responsive styling patterns."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Defines CollectionEntry usage, schema changes, union types, and strict TypeScript constraints."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Guides data-flow checks across collection schema, utilities, routes, layouts, search, RSS, and generated assets."}

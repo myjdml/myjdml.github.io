@@ -13,6 +13,7 @@ markup; utilities transform typed content entries.
     │   ├── components/                 # Reusable .astro components and React islands
     │   ├── content/
     │   │   ├── blog/                   # Markdown posts
+    │   │   ├── journal/                # Independent Journal records
     │   │   └── config.ts               # Astro content collection schema
     │   ├── layouts/                    # Page shells and post/list compositions
     │   ├── pages/                      # File-based routes and .ts endpoints
@@ -37,6 +38,9 @@ route families are:
 - index.astro, about.md, 404.astro, and search.astro for standalone pages.
 - posts/index.astro and posts/[slug]/index.astro for the post list, post
   details, and numeric pagination paths.
+- journal/index.astro and journal/[slug]/index.astro for the independent
+  Journal list, details, and numeric pagination paths. Journal routes use the
+  same shared layouts with the `journal` collection discriminator.
 - tags/index.astro, tags/[tag]/index.astro, and tags/[tag]/[page].astro for tag
   discovery and pagination.
 - rss.xml.ts, robots.txt.ts, og.png.ts, and posts/[slug]/index.png.ts for
@@ -63,9 +67,10 @@ Utilities in src/utils/ are small, composable functions. Examples include
 getSortedPosts.ts, getPostsByTag.ts, and getPagination.ts. They should accept
 typed values and return derived data, leaving markup to pages and layouts.
 
-Markdown files in src/content/blog/ are the editorial data source. Their
-frontmatter must satisfy the schema in src/content/config.ts; the URL used by
-the app comes from Astro's post.slug.
+Markdown files in src/content/blog/ and src/content/journal/ are the editorial
+data sources. Both collections satisfy the shared schema in
+src/content/config.ts, but their entries remain collection-specific; the URL
+used by the app comes from Astro's entry slug under the owning route prefix.
 
 ## Naming Conventions
 

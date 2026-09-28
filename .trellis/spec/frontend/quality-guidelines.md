@@ -20,13 +20,16 @@ compatible package manager as well.
 
 ## Content and Route Checks
 
-- New posts must satisfy the Zod schema in src/content/config.ts and use a
-  valid ISO date for pubDatetime.
+- New posts and Journal records must satisfy the shared Zod schema in
+  src/content/config.ts and use a valid ISO date for pubDatetime.
 - Listing routes should reuse getSortedPosts or a helper that delegates to it,
   so drafts and scheduled posts stay hidden.
 - Dynamic routes must define getStaticPaths and provide the props expected by
   their layout. Check both post and numeric pagination paths in
   src/pages/posts/[slug]/index.astro.
+- Journal routes must define the same published-entry and numeric pagination
+  paths under /journal/ and keep Journal links out of blog-only Posts, Tags,
+  and homepage data flows.
 - When changing SITE, canonical URLs, OG rendering, or footer behavior, run both
   build:cn and build:overseas; PUBLIC_SITE_LINE changes the emitted hostname
   and domestic legal footer.
