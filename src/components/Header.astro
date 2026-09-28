@@ -71,10 +71,10 @@ const { activeNav } = Astro.props;
             </a>
           </li>
           <li class="journal-item">
+            <span class="nav-divider" aria-hidden="true"></span>
             <a href="/journal/" class={activeNav === "journal" ? "active" : ""}>
               Journal
             </a>
-            <span class="nav-divider" aria-hidden="true"></span>
           </li>
           <li>
             <LinkButton
