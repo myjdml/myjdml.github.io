@@ -8,16 +8,20 @@ import Footer from "@components/Footer.astro";
 import SearchBar from "@components/Search";
 import getSortedPosts from "@utils/getSortedPosts";
 
-// Retrieve all published articles
-const posts = await getCollection("blog", ({ data }) => !data.draft);
-const sortedPosts = getSortedPosts(posts);
+// Retrieve all published articles and Journal entries
+const [posts, journal] = await Promise.all([
+  getCollection("blog"),
+  getCollection("journal"),
+]);
+const sortedPosts = getSortedPosts([...posts, ...journal]);
 
 // List of items to search in
-const searchList = sortedPosts.map(({ data, slug }) => ({
+const searchList = sortedPosts.map(({ data, slug, collection }) => ({
   title: data.title,
   description: data.description,
   data,
   slug,
+  collection,
 }));
 ---
 

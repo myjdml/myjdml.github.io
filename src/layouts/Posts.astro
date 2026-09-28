@@ -1,30 +1,51 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { ContentCollection, ContentEntry } from "../types";
 import Layout from "@layouts/Layout.astro";
 import Main from "@layouts/Main.astro";
 import Header from "@components/Header.astro";
 import Footer from "@components/Footer.astro";
 import Pagination from "@components/Pagination.astro";
 import Card from "@components/Card";
+import JournalCard from "@components/JournalCard";
 import { SITE } from "@config";
 
 export interface Props {
   currentPage: number;
   totalPages: number;
-  paginatedPosts: CollectionEntry<"blog">[];
+  paginatedPosts: ContentEntry[];
+  collection?: ContentCollection;
 }
 
-const { currentPage, totalPages, paginatedPosts } = Astro.props;
+const {
+  currentPage,
+  totalPages,
+  paginatedPosts,
+  collection = "blog",
+} = Astro.props;
+const basePath = collection === "journal" ? "/journal" : "/posts";
+const pageTitle = collection === "journal" ? "Journal" : "Posts";
+const pageDescription =
+  collection === "journal"
+    ? "Short records and notes."
+    : "All the articles I've posted.";
 ---
 
-<Layout title={`Posts | ${SITE.title}`}>
-  <Header activeNav="posts" />
-  <Main pageTitle="Posts" pageDesc="All the articles I've posted.">
+<Layout title={`${pageTitle} | ${SITE.title}`}>
+  <Header activeNav={collection === "journal" ? "journal" : "posts"} />
+  <Main pageTitle={pageTitle} pageDesc={pageDescription}>
     <ul>
       {
-        paginatedPosts.map(({ data, slug }) => (
-          <Card href={`/posts/${slug}/`} frontmatter={data} />
-        ))
+        paginatedPosts.map(({ data, slug, body }) =>
+          collection === "journal" ? (
+            <JournalCard
+              href={`${basePath}/${slug}/`}
+              frontmatter={data}
+              body={body}
+            />
+          ) : (
+            <Card href={`${basePath}/${slug}/`} frontmatter={data} />
+          )
+        )
       }
     </ul>
   </Main>
@@ -32,8 +53,8 @@ const { currentPage, totalPages, paginatedPosts } = Astro.props;
   <Pagination
     {currentPage}
     {totalPages}
-    prevUrl={`/posts${currentPage - 1 !== 1 ? "/" + (currentPage - 1) : ""}/`}
-    nextUrl={`/posts/${currentPage + 1}/`}
+    prevUrl={`${basePath}${currentPage - 1 !== 1 ? "/" + (currentPage - 1) : ""}/`}
+    nextUrl={`${basePath}/${currentPage + 1}/`}
   />
 
   <Footer noMarginTop={totalPages > 1} />

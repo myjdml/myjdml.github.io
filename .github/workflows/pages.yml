@@ -2,7 +2,7 @@ name: Deploy site to GitHub Pages
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -94,13 +94,13 @@ jobs:
       - name: Add known hosts
         run: |
           mkdir -p ~/.ssh
-          
+
           echo "=== Debug Info ==="
           echo "SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}"
           echo "DEPLOY_PORT: ${{ secrets.SERVER_PORT }}"
           echo "KNOWN_HOSTS configured: ${{ secrets.KNOWN_HOSTS != '' }}"
           echo "=================="
-          
+
           if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
             echo "Using predefined KNOWN_HOSTS"
             echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
@@ -127,7 +127,7 @@ jobs:
               fi
             done
           fi
-          
+
           echo "=== Known hosts file content ==="
           cat ~/.ssh/known_hosts
           echo "================================"
@@ -138,7 +138,7 @@ jobs:
 
       - name: Deploy to multiple servers
         env:
-          SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }}  # 多个IP用|分割，如: "192.168.1.10|192.168.1.11|192.168.1.12"
+          SERVER_HOSTS: ${{ secrets.SERVER_HOSTS }} # 多个IP用|分割，如: "192.168.1.10|192.168.1.11|192.168.1.12"
           DEPLOY_PORT: ${{ secrets.SERVER_PORT }}
           DEPLOY_USER: ${{ secrets.SERVER_USER }}
           REMOTE_BASE_DIR: ${{ vars.SERVER_DIR }}
