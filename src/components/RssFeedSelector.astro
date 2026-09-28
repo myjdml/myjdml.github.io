@@ -1,108 +1,139 @@
 ---
-interface Props {
+export interface Props {
   defaultFeed?: "all" | "posts" | "journal";
 }
 
 const { defaultFeed = "posts" } = Astro.props;
 
 const feeds = [
-  {
-    id: "posts",
-    label: "Posts",
-    description: "Blog articles",
-    href: "/posts/rss.xml",
-  },
-  {
-    id: "journal",
-    label: "Journal",
-    description: "Short records",
-    href: "/journal/rss.xml",
-  },
-  {
-    id: "all",
-    label: "All",
-    description: "Posts + Journal",
-    href: "/rss.html",
-  },
+  { id: "posts", label: "Posts", href: "/posts/rss.xml" },
+  { id: "journal", label: "Journal", href: "/journal/rss.xml" },
+  { id: "all", label: "All", href: "/rss.html" },
 ] as const;
 
 const selectedFeed = feeds.find(feed => feed.id === defaultFeed) ?? feeds[0];
+const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new tab)`;
 ---
 
-<details class="rss-selector">
-  <summary class="rss-trigger" title="Choose RSS feed">
-    <svg xmlns="http://www.w3.org/2000/svg" class="rss-icon" aria-hidden="true"
+<div class="rss-selector" data-rss-selector>
+  <a
+    class="rss-link"
+    data-rss-link
+    href={selectedFeed.href}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label={linkLabel}
+    title={linkLabel}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="rss-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
       ><path
         d="M19 20.001C19 11.729 12.271 5 4 5v2c7.168 0 13 5.832 13 13.001h2z"
       ></path><path
         d="M12 20.001h2C14 14.486 9.514 10 4 10v2c4.411 0 8 3.589 8 8.001z"
       ></path><circle cx="6" cy="18" r="2"></circle></svg
     >
-    <span>RSS · {selectedFeed.label}</span>
+    <span>RSS</span>
+  </a>
+  <span class="rss-separator" aria-hidden="true">·</span>
+  <span class="rss-choice">
+    <select aria-label="Choose RSS feed" title="Choose RSS feed" data-rss-feed>
+      {
+        feeds.map(feed => (
+          <option
+            value={feed.id}
+            data-href={feed.href}
+            selected={feed.id === selectedFeed.id}
+          >
+            {feed.label}
+          </option>
+        ))
+      }
+    </select>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       class="chevron"
       viewBox="0 0 24 24"
       aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg
     >
-  </summary>
-  <div class="rss-menu" role="menu" aria-label="RSS feeds">
-    <div class="menu-label">Subscribe to</div>
-    {
-      feeds.map(feed => (
-        <a
-          href={feed.href}
-          target="_blank"
-          rel="noreferrer"
-          role="menuitemradio"
-          aria-checked={feed.id === selectedFeed.id}
-          class:list={["rss-option", { selected: feed.id === selectedFeed.id }]}
-        >
-          <span class="option-copy">
-            <span class="option-label">{feed.label}</span>
-            <span class="option-description">{feed.description}</span>
-          </span>
-          {feed.id === selectedFeed.id && <span class="check">✓</span>}
-        </a>
-      ))
-    }
-  </div>
-</details>
+  </span>
+</div>
+
+<script>
+  const initializedSelects = new WeakSet();
+
+  function setupRssSelectors() {
+    document.querySelectorAll("[data-rss-selector]").forEach(selector => {
+      const select =
+        selector.querySelector<HTMLSelectElement>("[data-rss-feed]");
+      const link = selector.querySelector<HTMLAnchorElement>("[data-rss-link]");
+
+      if (!select || !link) return;
+
+      const feedSelect = select;
+      const rssLink = link;
+
+      function updateFeed() {
+        const option = feedSelect.selectedOptions[0];
+        if (!option?.dataset.href) return;
+
+        const label = `Subscribe to ${option.text} via RSS (opens in a new tab)`;
+        rssLink.href = option.dataset.href;
+        rssLink.setAttribute("aria-label", label);
+        rssLink.title = label;
+      }
+
+      updateFeed();
+
+      if (!initializedSelects.has(feedSelect)) {
+        feedSelect.addEventListener("change", updateFeed);
+        initializedSelects.add(feedSelect);
+      }
+    });
+  }
+
+  setupRssSelectors();
+  document.addEventListener("astro:after-swap", setupRssSelectors);
+  document.addEventListener("astro:page-load", setupRssSelectors);
+  window.addEventListener("pageshow", setupRssSelectors);
+</script>
 
 <style>
   .rss-selector {
-    position: relative;
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  .rss-trigger {
     display: inline-flex;
-    cursor: pointer;
     align-items: center;
-    gap: 0.45rem;
-    border-radius: 0.5rem;
-    padding: 0.35rem 0.55rem;
+    vertical-align: middle;
     color: rgb(var(--color-accent));
     font-size: 0.875rem;
     font-weight: 600;
-    list-style: none;
-    transition:
-      background-color 150ms ease,
-      color 150ms ease;
   }
 
-  .rss-trigger::-webkit-details-marker {
-    display: none;
+  .rss-link,
+  select {
+    min-height: 2.75rem;
+    border-radius: 0.5rem;
+    color: inherit;
+    transition: background-color 150ms ease;
   }
 
-  .rss-trigger:hover,
-  .rss-selector[open] .rss-trigger {
+  .rss-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.5rem;
+    text-decoration: none;
+  }
+
+  .rss-link:hover,
+  select:hover {
     background: color-mix(in srgb, rgb(var(--color-accent)) 10%, transparent);
   }
 
-  .rss-trigger:focus-visible,
-  .rss-option:focus-visible {
+  .rss-link:focus-visible,
+  select:focus-visible {
     outline: 2px solid rgb(var(--color-accent));
     outline-offset: 2px;
   }
@@ -113,84 +144,48 @@ const selectedFeed = feeds.find(feed => feed.id === defaultFeed) ?? feeds[0];
     fill: currentColor;
   }
 
+  .rss-separator {
+    padding: 0 0.1rem;
+  }
+
+  .rss-choice {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  select {
+    width: calc(7ch + 2.25rem);
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0.35rem 1.75rem 0.35rem 0.5rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  option {
+    background: rgb(var(--color-fill));
+    color: rgb(var(--color-text-base));
+  }
+
   .chevron {
+    position: absolute;
+    right: 0.4rem;
     width: 1rem;
     height: 1rem;
+    pointer-events: none;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2;
-    transition: transform 150ms ease;
   }
 
-  .rss-selector[open] .chevron {
-    transform: rotate(180deg);
-  }
-
-  .rss-menu {
-    position: absolute;
-    z-index: 10;
-    top: calc(100% + 0.45rem);
-    right: 0;
-    min-width: 12rem;
-    overflow: hidden;
-    border: 1px solid rgb(var(--color-border));
-    border-radius: 0.75rem;
-    background: rgb(var(--color-fill));
-    box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 12%);
-  }
-
-  .menu-label {
-    padding: 0.65rem 0.8rem 0.4rem;
-    color: rgb(var(--color-text-base) / 0.65);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .rss-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.65rem 0.8rem;
-    color: rgb(var(--color-text-base));
-    text-decoration: none;
-    transition: background-color 150ms ease;
-  }
-
-  .rss-option:hover,
-  .rss-option.selected {
-    background: color-mix(in srgb, rgb(var(--color-accent)) 9%, transparent);
-  }
-
-  .option-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-
-  .option-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  .option-description {
-    color: rgb(var(--color-text-base) / 0.65);
-    font-size: 0.75rem;
-  }
-
-  .check {
-    color: rgb(var(--color-accent));
-    font-weight: 700;
-  }
-
-  @media (max-width: 640px) {
-    .rss-menu {
-      right: auto;
-      left: 0;
+  @media (prefers-reduced-motion: reduce) {
+    .rss-link,
+    select {
+      transition: none;
     }
   }
 </style>
