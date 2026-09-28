@@ -1,5 +1,5 @@
-const getContentExcerpt = (body: string, maxLength = 150) => {
-  const plainText = body
+const getContentExcerpt = (body: string) => {
+  return body
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
@@ -10,12 +10,6 @@ const getContentExcerpt = (body: string, maxLength = 150) => {
     .replace(/[*_~]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-
-  const characters = Array.from(plainText);
-
-  if (characters.length <= maxLength) return plainText;
-
-  return `${characters.slice(0, maxLength - 1).join("")}…`;
 };
 
 export default getContentExcerpt;

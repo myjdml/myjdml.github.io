@@ -36,7 +36,7 @@ export default function JournalCard({
         )}
       </a>
       <Datetime pubDatetime={pubDatetime} modDatetime={modDatetime} />
-      <p>{getContentExcerpt(body)}</p>
+      <p className="line-clamp-3">{getContentExcerpt(body)}</p>
     </li>
   );
 }
