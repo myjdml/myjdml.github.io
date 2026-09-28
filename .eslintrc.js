@@ -13,6 +13,8 @@ module.exports = {
     {
       files: ["*.astro"],
       parser: "astro-eslint-parser",
+      // Astro scripts support TypeScript; lint their virtual files as .ts too.
+      processor: "astro/client-side-ts",
       parserOptions: {
         parser: "@typescript-eslint/parser",
         extraFileExtensions: [".astro"],

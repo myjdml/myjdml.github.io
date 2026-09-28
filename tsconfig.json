@@ -1,5 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
+  "exclude": ["node_modules", "dist", "dist-cn", "site-artifacts"],
   "compilerOptions": {
     "baseUrl": "src",
     "jsx": "react-jsx",
@@ -11,7 +12,7 @@
       "@layouts/*": ["layouts/*"],
       "@pages/*": ["pages/*"],
       "@styles/*": ["styles/*"],
-      "@utils/*": ["utils/*"],
-    },
-  },
+      "@utils/*": ["utils/*"]
+    }
+  }
 }

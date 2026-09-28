@@ -85,7 +85,7 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
 </div>
 
 <script>
-  const initializedSelectors = new WeakSet();
+  const initializedSelectors = new WeakSet<Element>();
   let outsideClickBound = false;
 
   function setupRssSelectors() {
@@ -93,12 +93,13 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
       if (initializedSelectors.has(selector)) return;
       initializedSelectors.add(selector);
 
-      const link = selector.querySelector("[data-rss-link]");
-      const trigger = selector.querySelector("[data-rss-trigger]");
-      const menu = selector.querySelector("[data-rss-menu]");
+      const link = selector.querySelector<HTMLAnchorElement>("[data-rss-link]");
+      const trigger =
+        selector.querySelector<HTMLButtonElement>("[data-rss-trigger]");
+      const menu = selector.querySelector<HTMLUListElement>("[data-rss-menu]");
       const current = selector.querySelector("[data-rss-current]");
       const options = Array.from(
-        selector.querySelectorAll("[data-rss-option]")
+        selector.querySelectorAll<HTMLButtonElement>("[data-rss-option]")
       );
 
       if (!link || !trigger || !menu || !current || options.length === 0)
@@ -128,7 +129,7 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
         if (restoreFocus) rssTrigger.focus();
       }
 
-      function selectOption(option) {
+      function selectOption(option: HTMLButtonElement) {
         options.forEach(opt =>
           opt.setAttribute("aria-selected", opt === option ? "true" : "false")
         );
@@ -144,7 +145,7 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
         closeMenu(true);
       }
 
-      function moveFocus(from, delta) {
+      function moveFocus(from: HTMLButtonElement, delta: number) {
         const index = options.indexOf(from);
         const next = options[(index + delta + options.length) % options.length];
         next.focus();
@@ -167,7 +168,11 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
 
       rssMenu.addEventListener("keydown", event => {
         const focused = document.activeElement;
-        if (!focused || !options.includes(focused)) return;
+        if (
+          !(focused instanceof HTMLButtonElement) ||
+          !options.includes(focused)
+        )
+          return;
 
         switch (event.key) {
           case "ArrowDown":
@@ -204,10 +209,12 @@ const linkLabel = `Subscribe to ${selectedFeed.label} via RSS (opens in a new ta
       if (!outsideClickBound) {
         outsideClickBound = true;
         document.addEventListener("click", event => {
+          if (!(event.target instanceof Node)) return;
+          const target = event.target;
           document.querySelectorAll("[data-rss-selector]").forEach(sel => {
-            if (sel.contains(event.target)) return;
+            if (sel.contains(target)) return;
             const trig = sel.querySelector("[data-rss-trigger]");
-            const m = sel.querySelector("[data-rss-menu]");
+            const m = sel.querySelector<HTMLUListElement>("[data-rss-menu]");
             if (trig && m) {
               m.hidden = true;
               trig.setAttribute("aria-expanded", "false");
